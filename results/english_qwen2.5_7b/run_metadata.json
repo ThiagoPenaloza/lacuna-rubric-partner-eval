@@ -1,0 +1,10 @@
+{
+  "model": "qwen2.5:7b",
+  "host": "http://127.0.0.1:11434",
+  "temperature": 0,
+  "seed": 17,
+  "task_count": 6,
+  "input_language": "en",
+  "system_prompt_sha256": "a3281be7ba4451641e93054b2fe0f7fab8f228e727f9e432b4773cee99dab8a0",
+  "started_at": "2026-11-08T03:08:40Z"
+}

@@ -1,0 +1,294 @@
+{
+  "schema_version": 2,
+  "language": "en",
+  "provenance": "Synthetic fixtures based on the six cases in EVAL_SPEC_V2; answer keys, not model results. Lexical heuristics pending human adjudication. English translation of the original Portuguese task set, preserving the same requirements and grading semantics.",
+  "tasks": [
+    {
+      "id": "incident_01",
+      "input": {
+        "goal": "evaluate an incident report",
+        "context": "must record the start time, the impact on users, and the recovery action",
+        "rubric_draft": "C1: The report describes the probable cause."
+      },
+      "expected_status": "review_ready",
+      "expected_findings": [
+        {
+          "id": "start_time",
+          "kind": "omission",
+          "anchors": [
+            "start time",
+            "starting time",
+            "when the incident started",
+            "when the incident began"
+          ],
+          "suggestion_anchors": [
+            "start time",
+            "starting time",
+            "when the incident started",
+            "when the incident began"
+          ],
+          "suggestion_patterns": [
+            "(?:record|report|includ|requir|identif|indicat|specif|stat|contain|list).{0,100}(?:start(?:ing)? time|when the incident (?:started|began))"
+          ]
+        },
+        {
+          "id": "user_impact",
+          "kind": "omission",
+          "anchors": [
+            "impact",
+            "scope"
+          ],
+          "suggestion_anchors": [
+            "impact",
+            "scope"
+          ],
+          "suggestion_patterns": [
+            "(?:describ|record|report|includ|requir|identif|indicat|specif|stat|contain).{0,100}(?:observable impact|impact on (?:the )?users|user impact|affected users|scope of (?:the )?(?:incident|impact))"
+          ]
+        },
+        {
+          "id": "recovery",
+          "kind": "omission",
+          "anchors": [
+            "recovery",
+            "restoration"
+          ],
+          "suggestion_anchors": [
+            "recovery",
+            "restoration"
+          ],
+          "suggestion_patterns": [
+            "(?:describ|record|report|includ|requir|identif|indicat|specif|stat|contain).{0,100}(?:(?:recovery|restoration) (?:action|step|outcome|result)|(?:action|outcome|result).{0,30}(?:recovery|restoration))"
+          ]
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)"
+      ],
+      "annotation_note": "Correction requested after review: require start time, impact, and recovery, all explicit in the context, even though the initial V2 answer key listed only the last two."
+    },
+    {
+      "id": "context_02",
+      "input": {
+        "goal": "evaluate whether a summary meets the customer's needs",
+        "context": "no customer profile, need, or operational rule is provided",
+        "rubric_draft": "C1: The summary is useful to the customer."
+      },
+      "expected_status": "needs_context",
+      "expected_findings": [
+        {
+          "id": "client_needs",
+          "kind": "insufficient_context",
+          "anchors": [
+            "need",
+            "profile",
+            "usefulness",
+            "useful"
+          ],
+          "question_anchors": [
+            "need",
+            "outcome",
+            "usefulness",
+            "profile"
+          ],
+          "suggestion_anchors": []
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)"
+      ]
+    },
+    {
+      "id": "ambiguity_03",
+      "input": {
+        "goal": "score a support response",
+        "context": "resolution must happen within 2 business days",
+        "rubric_draft": "C1: Resolves the problem quickly."
+      },
+      "expected_status": "review_ready",
+      "expected_findings": [
+        {
+          "id": "resolution_deadline",
+          "kind": "ambiguity",
+          "anchors": [
+            "quickly"
+          ],
+          "suggestion_anchors": [
+            "2 business days",
+            "two business days"
+          ],
+          "suggestion_patterns": [
+            "(?:resolv|resolution).{0,50}(?:within|up to|in at most|at most|no later than|no more than) (?:2|two) business days"
+          ]
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)",
+        "(?<!no )(?<!not )\\b(?:more than|longer than|over|after|at least|a minimum of) (?:2|two) (?:business |calendar )?days",
+        "\\b(?:2|two) (?:hours|calendar days)",
+        "\\b(?:not|never)\\b.{0,20}(?:resolv|report|indicat|includ|requir|stat).{0,70}(?:deadline|\\b2\\b|\\btwo\\b)"
+      ]
+    },
+    {
+      "id": "feedback_04",
+      "input": {
+        "goal": "evaluate a rubric that measures whether a summary contains a decision and an owner",
+        "context": "the summary must contain an explicit decision and an identified responsible person",
+        "rubric_draft": "C1: Explicit decision. C2: Responsible person identified.",
+        "history": {
+          "partner_feedback": "The rubric is vague; be more specific."
+        }
+      },
+      "expected_status": "review_ready",
+      "annotation_note": "Case 4 does not fix a kind in the spec; ambiguity represents the missing location in the previous feedback, not an accusation that C1/C2 are vague.",
+      "expected_findings": [
+        {
+          "id": "unactionable_feedback",
+          "kind": "ambiguity",
+          "anchors": [
+            "previous feedback",
+            "be more specific"
+          ],
+          "suggestion_anchors": [
+            "textual evidence",
+            "text excerpt"
+          ],
+          "suggestion_anchor_groups": [
+            [
+              "C1"
+            ],
+            [
+              "C2"
+            ],
+            [
+              "absence",
+              "absent",
+              "missing"
+            ]
+          ],
+          "suggestion_patterns": [
+            "(?:indicat|defin|specif|explicit|link|tie|associat|show|identif).{0,80}(?:textual evidence|text excerpt)"
+          ]
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)"
+      ]
+    },
+    {
+      "id": "code_05",
+      "input": {
+        "goal": "rubric for an agent response that proposes a change to the parse_date function",
+        "context": "valid ISO dates must become a date object; an invalid format must return an explicit error without terminating the process",
+        "rubric_draft": "C1: The code works correctly."
+      },
+      "expected_status": "review_ready",
+      "expected_findings": [
+        {
+          "id": "valid_iso",
+          "kind": "omission",
+          "anchors": [
+            "ISO"
+          ],
+          "suggestion_anchors": [
+            "ISO"
+          ],
+          "suggestion_anchor_groups": [
+            [
+              "date object",
+              "expected date"
+            ]
+          ],
+          "suggestion_patterns": [
+            "iso.{0,45}(?:produc|return|yield|convert|transform|become|pars).{0,35}(?:date object|expected date)"
+          ]
+        },
+        {
+          "id": "invalid_input_continuity",
+          "kind": "omission",
+          "anchors": [
+            "invalid"
+          ],
+          "suggestion_anchors": [
+            "explicit error"
+          ],
+          "suggestion_anchor_groups": [
+            [
+              "process continues",
+              "without terminating the process",
+              "process keeps running",
+              "process stays alive"
+            ]
+          ],
+          "suggestion_patterns": [
+            "(?:(?:input|format).{0,25}invalid|invalid.{0,25}(?:input|format)).{0,40}(?:return|produc|rais|yield|give).{0,20}explicit error"
+          ]
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)",
+        "(?:requir|mandatory|must use).{0,30}(?:python|javascript|dateutil|librar)",
+        "(?:(?<!never )(?<!not )\\b(?:terminates|stops|kills|ends|aborts|crashes|exits)|\\b(?:must|should|will) (?:terminate|stop|kill|end|abort|crash|exit)) the process"
+      ]
+    },
+    {
+      "id": "iteration_06",
+      "input": {
+        "goal": "rubric for a support response",
+        "context": "explain the next action and a deadline of up to 2 business days",
+        "rubric_draft": "C1: States the next action.",
+        "history": {
+          "initial_draft": "C1: Useful response.",
+          "partner_feedback": "Split the next action and the deadline into separate criteria.",
+          "author_decision": "The author accepted the action and changed C1 to States the next action; the deadline still does not appear."
+        }
+      },
+      "expected_status": "review_ready",
+      "expected_findings": [
+        {
+          "id": "remaining_deadline",
+          "kind": "omission",
+          "anchors": [
+            "deadline"
+          ],
+          "suggestion_anchors": [
+            "2 business days",
+            "two business days"
+          ],
+          "suggestion_anchor_groups": [
+            [
+              "deadline"
+            ]
+          ],
+          "suggestion_patterns": [
+            "(?:report|indicat|includ|requir|record|specif|stat).{0,50}deadline.{0,25}(?:of up to|up to|within|of at most|at most|no later than|of no more than|no more than) (?:2|two) business days"
+          ]
+        }
+      ],
+      "rejection_patterns": [
+        "\\bthere (?:is|are) no (?:gaps?|omissions?|missing requirements?)\\b",
+        "(?:\\bno gaps?\\b|\\bno omissions?\\b|all (?:the )?requirements (?:are )?(?:already )?(?:covered|addressed))",
+        "(?:\\bnothing (?:is )?(?:missing|omitted)\\b|\\bnot missing\\b)",
+        "(?:gap|omission).{0,20}(?:does not exist|doesn't exist|nonexistent)",
+        "(?<!no )(?<!not )\\b(?:more than|longer than|over|after|at least|a minimum of) (?:2|two) (?:business |calendar )?days",
+        "\\b(?:2|two) (?:hours|calendar days)",
+        "\\b(?:not|never)\\b.{0,20}(?:resolv|report|indicat|includ|requir|stat).{0,70}(?:deadline|\\b2\\b|\\btwo\\b)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lacuna — video render template</title>
+<!-- Render template for the demo video. It is not a permanent product UI:
+     render.mjs injects LACUNA_DATA (real data) and LACUNA_TIMELINE (narration) and
+     calls __renderAt(t) frame by frame. -->
+<style>
+:root{
+  --bg0:#05060a; --win:#0c0e15; --side:#090b11; --main:#0e1118; --card:#131722; --card2:#171c29;
+  --line:rgba(255,255,255,.075); --line2:rgba(255,255,255,.13);
+  --text:#eef1f8; --muted:#a3aabd; --faint:#6f778c;
+  --brand:#9b8cff; --mint:#5fe3c8; --amber:#ffb547; --blue:#6aaeff; --violet:#c19bff;
+  --ok:#3fdc9c; --bad:#ff6378; --okbg:rgba(63,220,156,.12); --badbg:rgba(255,99,120,.12);
+  --ui:-apple-system,"SF Pro Text",system-ui,sans-serif;
+  --display:"New York",ui-serif,Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:var(--bg0);color:var(--text);font-family:var(--ui);
+  -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+#bg{position:absolute;inset:0;overflow:hidden;background:
+  radial-gradient(900px 520px at var(--g1x,20%) var(--g1y,10%),rgba(124,98,255,.26),transparent 70%),
+  radial-gradient(760px 520px at var(--g2x,85%) var(--g2y,90%),rgba(40,200,175,.16),transparent 70%),
+  radial-gradient(600px 400px at 70% 15%,rgba(255,170,70,.07),transparent 70%),var(--bg0)}
+#bg:after{content:"";position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 78%)}
+#chapter{position:absolute;z-index:90;left:16px;top:12px;padding:7px 12px;border-radius:9px;background:rgba(5,6,10,.86);border:1px solid rgba(255,255,255,.1);font:600 11px/1 var(--mono);letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;gap:10px;align-items:center}
+#chapter b{color:var(--mint);font-weight:700}
+#event{position:absolute;z-index:90;right:16px;top:12px;padding:7px 12px;border-radius:9px;background:rgba(5,6,10,.86);border:1px solid rgba(255,255,255,.1);font:500 11px/1 var(--mono);letter-spacing:.08em;color:var(--faint)}
+#event i{font-style:normal;color:var(--muted)}
+#cam{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0}
+#win{position:absolute;left:64px;top:44px;width:1152px;height:600px;border-radius:14px;background:var(--win);
+  border:1px solid var(--line2);box-shadow:0 50px 140px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;transform-origin:50% 0%}
+.titlebar{position:absolute;left:0;top:0;right:0;height:40px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid var(--line);background:linear-gradient(#11141c,#0d1017)}
+.lights{display:flex;gap:8px}.lights i{width:12px;height:12px;border-radius:50%;background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.tb-title{position:absolute;left:50%;transform:translateX(-50%);font:600 12.5px var(--ui);color:var(--muted);letter-spacing:.01em}
+.tb-title b{color:var(--text);font-weight:650}
+.tb-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;border:1px solid var(--line2);font:600 10.5px/1 var(--mono);color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.pill.mint{color:var(--mint);border-color:rgba(95,227,200,.35);background:rgba(95,227,200,.07)}
+.side{position:absolute;left:0;top:40px;bottom:0;width:200px;background:var(--side);border-right:1px solid var(--line);padding:16px 12px}
+.brand{display:flex;align-items:center;gap:9px;padding:2px 6px 16px}
+.brand span{font:600 21px/1 var(--display);letter-spacing:-.01em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav div{display:flex;align-items:center;gap:10px;height:32px;padding:0 9px;border-radius:8px;font:550 13px var(--ui);color:var(--muted)}
+.nav div svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav div.on{background:rgba(155,140,255,.13);color:var(--text);box-shadow:inset 0 0 0 1px rgba(155,140,255,.25)}
+.side h6{font:650 10px/1 var(--mono);letter-spacing:.14em;color:var(--faint);margin:20px 9px 8px}
+.clist{display:flex;flex-direction:column;gap:1px}
+.citem{display:flex;align-items:center;gap:8px;height:29px;padding:0 9px;border-radius:7px;font:500 12px var(--ui);color:var(--muted)}
+.citem em{font:600 10.5px var(--mono);font-style:normal;color:var(--faint);width:16px}
+.citem.on{background:rgba(255,255,255,.05);color:var(--text)}
+.citem .st{margin-left:auto;display:flex;gap:3px}
+.citem .st i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.12)}
+.side-foot{position:absolute;left:12px;right:12px;bottom:14px;padding:11px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.02);font:500 11px/1.5 var(--ui);color:var(--muted)}
+.side-foot b{display:block;color:var(--text);font:600 11.5px var(--mono);margin-bottom:2px}
+.mainp{position:absolute;left:200px;top:40px;right:0;bottom:0;background:var(--main)}
+.view{position:absolute;inset:0;opacity:0}
+.vhead{height:58px;display:flex;align-items:center;gap:12px;padding:0 22px;border-bottom:1px solid var(--line)}
+.vhead h2{font:650 16px var(--ui);letter-spacing:-.005em}
+.vhead .crumb{font:500 13px var(--ui);color:var(--faint)}
+.idchip{font:600 11px var(--mono);color:var(--muted);padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.vbody{position:absolute;left:22px;right:22px;top:76px;bottom:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:9px;font:650 13px var(--ui);border:1px solid var(--line2);color:var(--text);background:rgba(255,255,255,.04)}
+.btn.primary{background:linear-gradient(180deg,#a596ff,#7e6cf5);border-color:rgba(255,255,255,.25);color:#0b0a18;box-shadow:0 8px 24px rgba(126,108,245,.35)}
+.btn svg{width:13px;height:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.chead{display:flex;align-items:center;gap:8px;height:42px;padding:0 15px;border-bottom:1px solid var(--line)}
+.chead h3{font:650 13.5px var(--ui)}.chead small{font:500 11.5px var(--ui);color:var(--faint)}
+.lbl{font:650 10px/1 var(--mono);letter-spacing:.13em;color:var(--faint);text-transform:uppercase}
+.field{margin:12px 15px 0}
+.field .lbl{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.field .lbl span{color:var(--muted);letter-spacing:.02em;text-transform:none;font:500 10.5px var(--ui)}
+.fbox{min-height:38px;padding:9px 11px;border-radius:9px;background:#0b0e14;border:1px solid var(--line);font:500 14px/1.5 var(--ui);color:var(--text)}
+.fbox.mono{font:500 13px/1.5 var(--mono)}
+.typing:after{content:"";display:inline-block;width:2px;height:1.05em;margin-left:1px;vertical-align:-2px;background:var(--brand)}
+mark.ev{color:inherit;background:linear-gradient(90deg,rgba(255,181,71,.34),rgba(255,181,71,.34)) no-repeat 0 0/var(--w,0%) 100%;border-radius:3px;padding:1px 0;box-shadow:inset 0 -2px 0 rgba(255,181,71,var(--u,0))}
+mark.bad{color:inherit;background:rgba(255,99,120,.22);border-radius:3px;box-shadow:inset 0 -2px 0 var(--bad);padding:0 1px}
+mark.good{color:inherit;background:rgba(63,220,156,.18);border-radius:3px;box-shadow:inset 0 -2px 0 var(--ok);padding:0 1px}
+mark.soft{color:inherit;background:none;box-shadow:inset 0 -2px 0 rgba(255,255,255,var(--u,0))}
+.lock{position:absolute;left:15px;right:15px;bottom:13px;display:flex;gap:9px;align-items:center;padding:9px 11px;border-radius:9px;border:1px dashed rgba(255,255,255,.14);font:500 11.5px/1.35 var(--ui);color:var(--muted)}
+.lock svg{flex:none;width:16px;height:16px;stroke:var(--mint);fill:none;stroke-width:1.8}
+.steps{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.stp{flex:1;display:flex;align-items:center;gap:7px;height:28px;padding:0 9px;border-radius:7px;border:1px solid var(--line);font:600 11px var(--ui);color:var(--faint);white-space:nowrap}
+.stp i{flex:none;width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font:700 9px var(--ui);font-style:normal}
+.stp.act{color:var(--text);border-color:rgba(155,140,255,.5);background:rgba(155,140,255,.1)}
+.stp.act i{border-color:var(--brand);border-top-color:transparent;transform:rotate(var(--spin,0deg))}
+.stp.done{color:var(--text);border-color:rgba(63,220,156,.3)}
+.stp.done i{border-color:var(--ok);background:var(--ok);color:#06291c}
+.stp.fail{color:var(--text);border-color:rgba(255,99,120,.4)}
+.stp.fail i{border-color:var(--bad);background:var(--bad);color:#2c0710}
+.stage{position:absolute;left:0;right:0;top:92px;bottom:0}
+.layer{position:absolute;inset:12px 14px 14px;opacity:0}
+.code{font:500 11.6px/1.55 var(--mono);color:#cdd3e4;white-space:pre-wrap;word-break:break-word}
+.code .k{color:#b9a8ff}.code .s{color:#9fe6cf}.code .b{color:#ffcf86}
+.codebox{padding:12px 14px;border-radius:10px;background:#090b10;border:1px solid var(--line);overflow:hidden}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:6px;font:650 10.5px/1 var(--mono);letter-spacing:.03em;white-space:nowrap}
+.k-omission{color:#ffd08a;background:rgba(255,181,71,.13);box-shadow:inset 0 0 0 1px rgba(255,181,71,.35)}
+.k-insufficient_context{color:#a9cdff;background:rgba(106,174,255,.13);box-shadow:inset 0 0 0 1px rgba(106,174,255,.35)}
+.k-ambiguity{color:#d9c2ff;background:rgba(193,155,255,.13);box-shadow:inset 0 0 0 1px rgba(193,155,255,.35)}
+.neutral{color:var(--muted);background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line2)}
+.okb{color:var(--ok);background:var(--okbg);box-shadow:inset 0 0 0 1px rgba(63,220,156,.35)}
+.badb{color:#ff8b9b;background:var(--badbg);box-shadow:inset 0 0 0 1px rgba(255,99,120,.4)}
+.fcard{padding:13px 15px;border-radius:12px;background:var(--card2);border:1px solid var(--line2);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.fsec{margin-top:8px}
+.fsec .lbl{margin-bottom:5px;display:block}
+.fsec p{font:500 12.6px/1.42 var(--ui);color:var(--text)}
+.quote{padding:7px 11px;border-left:3px solid var(--amber);background:rgba(255,181,71,.07);border-radius:0 8px 8px 0;font:500 12.6px/1.42 var(--ui)}
+.check{display:inline-flex;gap:6px;align-items:center;margin-top:6px;font:600 11px var(--ui)}
+.check.ok{color:var(--ok)}.check.bad{color:#ff8b9b}
+.sugg{padding:8px 11px;border-radius:8px;background:rgba(155,140,255,.08);border:1px solid rgba(155,140,255,.22)}
+.grow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.grow .lbl{width:100%;margin-bottom:2px}
+.pop{position:absolute;border-radius:12px;background:#10131c;border:1px solid var(--line2);box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0}
+/* gate */
+.gl{position:absolute;left:0;top:0;width:400px;bottom:0;display:flex;flex-direction:column;gap:14px}
+.gr{position:absolute;left:418px;right:0;top:0;bottom:0;display:flex;flex-direction:column;gap:14px}
+.sig{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font:500 12.5px var(--ui)}
+.sig:last-child{border-bottom:0}
+.sig .ic{flex:none;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font:800 11px var(--ui)}
+.sig .ic.ok{background:var(--okbg);color:var(--ok)}.sig .ic.bad{background:var(--badbg);color:var(--bad)}
+.sig small{margin-left:auto;font:600 11px var(--mono);color:var(--faint)}
+.gate{border-color:rgba(95,227,200,.35);box-shadow:0 0 0 1px rgba(95,227,200,.12),0 20px 60px rgba(0,0,0,.35)}
+.gbtns{display:flex;gap:8px}
+.gbtns .btn{flex:1;justify-content:center}
+.btn.acc{color:var(--ok);border-color:rgba(63,220,156,.35)}
+.btn.edt{color:#cfc6ff;border-color:rgba(155,140,255,.45)}
+.btn.rej{color:#ff8b9b;border-color:rgba(255,99,120,.35)}
+.btn.sel{background:rgba(155,140,255,.18);box-shadow:inset 0 0 0 1px rgba(155,140,255,.7)}
+.editor{margin-top:12px;padding:10px 12px;min-height:84px;border-radius:9px;background:#0a0d13;border:1px solid rgba(155,140,255,.45);font:500 12.5px/1.6 var(--mono);color:var(--text);white-space:pre-wrap}
+.toast{position:absolute;right:22px;bottom:20px;display:flex;gap:10px;align-items:center;padding:12px 16px;border-radius:12px;background:#0f2a22;border:1px solid rgba(63,220,156,.45);font:600 12.5px var(--ui);color:#c9f7e6;box-shadow:0 20px 50px rgba(0,0,0,.5);opacity:0}
+/* dashboard */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.kpi{height:98px;padding:12px 13px;border-radius:12px;background:var(--card);border:1px solid var(--line);position:relative;overflow:hidden}
+.kpi .lbl{display:block;margin-bottom:9px;font-size:9.5px;letter-spacing:.07em;white-space:nowrap}
+.kpi .v{font:650 30px/1 var(--ui);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .v small{font:600 15px var(--ui);color:var(--muted);letter-spacing:0}
+.kpi .sub{margin-top:7px;font:600 10.5px var(--mono);color:var(--muted);white-space:nowrap}
+.kpi.good .v{color:var(--ok)}.kpi.badk .v{color:var(--bad)}.kpi.mid .v{color:var(--amber)}
+.kpi .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--ok);width:var(--w,0%)}
+.kpi.badk .bar{background:var(--bad)}.kpi.mid .bar{background:var(--amber)}
+.dgrid{position:absolute;left:0;right:0;top:112px;bottom:0;display:grid;grid-template-columns:478px 1fr;gap:14px}
+table.mx{width:100%;border-collapse:collapse;font:500 12px var(--ui)}
+.mx th{font:650 9.5px var(--mono);letter-spacing:.1em;color:var(--faint);text-transform:uppercase;text-align:center;padding:9px 4px;border-bottom:1px solid var(--line)}
+.mx th:first-child,.mx td:first-child{text-align:left;padding-left:14px}
+.mx td{text-align:center;padding:0 4px;height:38px;border-bottom:1px solid var(--line)}
+.mx tr:last-child td{border-bottom:0}
+.mx td b{font:600 12px var(--ui)}.mx td small{display:block;font:500 10px var(--mono);color:var(--faint)}
+.yes,.no{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font:800 11px var(--ui)}
+.yes{background:var(--okbg);color:var(--ok)}.no{background:var(--badbg);color:var(--bad)}
+.frac{font:650 11px var(--mono);color:var(--muted)}
+.bars{padding:8px 15px}
+.brow{display:grid;grid-template-columns:132px 1fr 1fr;gap:10px;align-items:center;height:24px;font:500 11.5px var(--mono);color:var(--muted)}
+.brow.h{height:18px;font:650 9.5px var(--mono);letter-spacing:.1em;color:var(--faint)}
+.bt{position:relative;height:16px;border-radius:4px;background:rgba(255,255,255,.04)}
+.bt i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;width:var(--w,0%)}
+.bt span{position:absolute;left:calc(var(--w,0%) + 6px);top:0;font:650 11px/16px var(--mono);color:var(--text)}
+.bt.m i{background:linear-gradient(90deg,#7e6cf5,#a596ff)}.bt.e i{background:linear-gradient(90deg,#2aa58b,#5fe3c8)}
+.hist{display:flex;gap:8px;padding:9px 15px}
+.hv{flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.hv .hr{display:flex;align-items:baseline;justify-content:space-between}
+.hv b{font:650 11px var(--mono);color:var(--muted)}
+.hv .v{font:650 15px var(--ui)}.hv small{display:block;margin-top:4px;font:500 9.5px/1.35 var(--mono);color:var(--faint);word-break:break-all}
+.term{position:absolute;right:24px;top:116px;width:520px;height:318px;border-radius:12px;background:#07090d;border:1px solid var(--line2);box-shadow:0 30px 80px rgba(0,0,0,.7);overflow:hidden;opacity:0}
+.term .tb{height:30px;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid var(--line);font:600 11px var(--mono);color:var(--faint)}
+.term .tb i{width:10px;height:10px;border-radius:50%;background:#2a2e3a}
+.term pre{padding:10px 14px;font:500 11px/1.62 var(--mono);color:#b8c0d4;white-space:pre}
+.term pre .okl{color:var(--ok)}.term pre .cmd{color:var(--text)}
+/* cases */
+.cwrap{position:absolute;inset:0;display:grid;grid-template-columns:432px 1fr;gap:14px}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:10px}
+.ccard{position:relative;padding:11px 13px;border-radius:12px;background:var(--card);border:1px solid var(--line);opacity:0;overflow:hidden}
+.ccard .top{display:flex;align-items:flex-start;gap:9px}
+.ccard .num{font:600 22px/1 var(--display);color:var(--brand)}
+.ccard .ttl{font:650 12.5px/1.25 var(--ui)}
+.ccard .cid{font:600 10px var(--mono);color:var(--faint);margin-top:3px}
+.ccard .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.ccard .badge{height:19px;font-size:9.5px;padding:0 7px}
+.chk{display:flex;flex-wrap:wrap;gap:4px 9px;margin-top:9px;font:600 10px var(--mono);color:var(--muted)}
+.chk span{display:flex;align-items:center;gap:4px}
+.chk .o{color:var(--ok);font-style:normal}.chk .x{color:var(--bad);font-style:normal}
+.ccard.focus{border-color:rgba(155,140,255,.6);background:#171b2a;box-shadow:0 0 0 1px rgba(155,140,255,.3),0 14px 40px rgba(0,0,0,.4)}
+.cdetail{position:relative;padding:16px 18px;overflow:hidden;opacity:0}
+.cdetail .dh{display:flex;align-items:baseline;gap:10px}
+.cdetail .dh .num{font:600 34px/1 var(--display);color:var(--brand)}
+.cdetail .dh .ttl{font:650 18px var(--ui)}
+.cdetail .dh .cid{margin-left:auto;font:600 11px var(--mono);color:var(--faint)}
+.drow{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center;margin-top:10px;font:500 12px var(--ui);color:var(--muted)}
+.drow div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.drow .vs{font:600 10.5px var(--mono);color:var(--faint)}
+.dq{margin-top:14px;padding:11px 13px;border-radius:10px;background:#0b0e14;border:1px solid var(--line);font:500 13px/1.5 var(--ui);color:var(--text)}
+.dq .lbl{display:block;margin-bottom:6px}
+.dprov{margin-top:12px;padding:11px 13px;border-radius:10px;border:1px dashed rgba(255,255,255,.14);font:500 12px/1.45 var(--ui)}
+.dprov .lbl{display:block;margin-bottom:7px}
+.dprov p{display:flex;gap:8px;margin-top:5px}.dprov p i{font-style:normal;font-weight:800;flex:none}
+/* overlays */
+.ov{position:absolute;inset:0;opacity:0;pointer-events:none}
+.center{position:absolute;left:0;right:0;text-align:center}
+.wm{font:500 92px/1 var(--display);letter-spacing:-.025em}
+.kicker{font:650 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mint)}
+.l1{font:600 34px/1.2 var(--ui);letter-spacing:-.015em}
+.l2{font:500 22px/1.35 var(--ui);color:var(--muted)}
+.l2 b{color:var(--text);font-weight:650}
+.hyp{font:500 34px/1.22 var(--display);letter-spacing:-.015em;max-width:1120px;margin:0 auto}
+.hyp em{font-style:normal;color:var(--amber)}
+.lim{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:1060px;margin:0 auto}
+.lim div{padding:14px 15px;border-radius:12px;background:rgba(19,23,34,.85);border:1px solid var(--line2);font:550 14px/1.38 var(--ui);text-align:left;opacity:0}
+.lim div b{display:block;font:650 10px var(--mono);letter-spacing:.13em;color:var(--faint);margin-bottom:7px;text-transform:uppercase}
+.next{width:1060px;margin:14px auto 0;padding:13px 16px;border-radius:12px;border:1px solid rgba(95,227,200,.35);background:rgba(95,227,200,.06);font:550 14px var(--ui);text-align:left;opacity:0}
+.next b{font:650 10px var(--mono);letter-spacing:.13em;color:var(--mint);margin-right:10px;text-transform:uppercase}
+#cursor{position:absolute;left:0;top:0;width:24px;height:24px;opacity:0;pointer-events:none;z-index:50}
+#cursor svg{filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+#ripple{position:absolute;left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:2px solid rgba(165,150,255,.9);opacity:0;z-index:49}
+#caps{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;z-index:100}
+#cap{max-width:1100px;padding:8px 18px;border-radius:12px;background:rgba(5,6,10,.94);border:1px solid rgba(255,255,255,.12);
+  font:600 20px/1.3 var(--ui);color:#fff;text-align:center;letter-spacing:-.003em;opacity:0;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#fade{position:absolute;inset:0;background:#000;opacity:0;z-index:200}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="chapter"><b id="chn">01</b><span id="cht">Input</span></div>
+
+<div id="cam">
+  <div id="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="tb-title"><b>Lacuna</b> — Rubric Partner Eval</div>
+      <div class="tb-right"><span class="pill"><span class="dot"></span>REPLAY · RECORDED RUN</span><span class="pill mint">qwen2.5:7b · local</span></div>
+    </div>
+    <aside class="side">
+      <div class="brand"><svg width="26" height="26" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a596ff"/><stop offset="1" stop-color="#5fe3c8"/></linearGradient></defs><circle cx="20" cy="20" r="14" fill="none" stroke="url(#lg)" stroke-width="5" stroke-linecap="round" stroke-dasharray="70 18" transform="rotate(-40 20 20)"/></svg><span>Lacuna</span></div>
+      <div class="nav" id="nav">
+        <div data-v="analyze"><svg viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>Analyze</div>
+        <div data-v="gate"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Human review</div>
+        <div data-v="dash"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Dashboard</div>
+        <div data-v="cases"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Six cases</div>
+      </div>
+      <h6>Eval cases</h6>
+      <div class="clist" id="clist"></div>
+      <div class="side-foot"><b>qwen2.5:7b · Ollama</b>temperature 0 · seed 17<br>1 attempt per task<br><span id="runat"></span></div>
+    </aside>
+    <main class="mainp">
+      <!-- ANALYZE -->
+      <section class="view" id="v-analyze">
+        <div class="vhead"><span class="crumb">Cases ›</span><h2 id="a-title">Case 01 · Missing requirement</h2><span class="idchip" id="a-id">incident_01</span>
+          <div style="margin-left:auto;display:flex;gap:10px;align-items:center"><span class="crumb" style="font-size:12px">Only the input is sent to the model</span>
+          <span class="btn primary" id="btn-analyze"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="#0b0a18"/></svg>Analyze</span></div></div>
+        <div class="vbody">
+          <div class="card" id="incard" style="position:absolute;left:0;top:0;width:336px;bottom:0">
+            <div class="chead"><h3>Input</h3><small>sent to the partner</small></div>
+            <div class="field"><div class="lbl">goal<span>what is evaluated</span></div><div class="fbox" id="f-goal"></div></div>
+            <div class="field"><div class="lbl">context<span>known requirements</span></div><div class="fbox" id="f-context" style="min-height:66px"></div></div>
+            <div class="field"><div class="lbl">rubric_draft<span>current criteria</span></div><div class="fbox mono" id="f-rubric"></div></div>
+            <div class="lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span>Answer key, expected status, and grader patterns stay <b style="color:var(--text)">out of the prompt</b>.</span></div>
+          </div>
+          <div class="card" id="rpanel" style="position:absolute;left:352px;right:0;top:0;bottom:0;overflow:hidden">
+            <div class="chead"><h3>Partner analysis</h3><small>replay of the real run · temperature 0 · seed 17</small></div>
+            <div class="steps" id="steps">
+              <div class="stp"><i></i>Input</div><div class="stp"><i></i>Model</div><div class="stp"><i></i>JSON contract</div><div class="stp"><i></i>Literal evidence</div><div class="stp"><i></i>Proxy</div>
+            </div>
+            <div class="stage">
+              <div class="layer" id="L-empty" style="display:grid;place-items:center;opacity:1"><div style="text-align:center;color:var(--faint);font:500 13px var(--ui)"><div style="font:500 30px var(--display);color:var(--muted);margin-bottom:6px">Ready to analyze</div>The partner points out gaps; the decision stays yours.</div></div>
+              <div class="layer" id="L-payload"></div>
+              <div class="layer" id="L-model"></div>
+              <div class="layer" id="L-json"></div>
+              <div class="layer" id="L-card"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- HUMAN REVIEW -->
+      <section class="view" id="v-gate">
+        <div class="vhead"><h2>Human review</h2><span class="idchip">incident_01</span><span class="crumb" style="margin-left:auto;font-size:12px">The partner suggests · the grader flags · <b style="color:var(--text)">you decide</b></span></div>
+        <div class="vbody">
+          <div class="gl">
+            <div class="card" id="g-sig"></div>
+            <div class="card" id="g-adj" style="flex:1;padding:12px 15px;overflow:hidden"></div>
+          </div>
+          <div class="gr">
+            <div class="card" id="g-find" style="padding:12px 15px"></div>
+            <div class="card gate" id="g-gate" style="flex:1;padding:14px 16px"></div>
+          </div>
+        </div>
+        <div class="toast" id="toast"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3fdc9c" stroke-width="2.4" stroke-linecap="round"><path d="M5 12l5 5 9-10"/></svg>Human decision recorded · nothing was applied automatically</div>
+      </section>
+      <!-- DASHBOARD -->
+      <section class="view" id="v-dash">
+        <div class="vhead"><h2>Run dashboard</h2><span class="idchip" id="d-dir"></span>
+          <div style="margin-left:auto;display:flex;gap:6px"><span class="pill">qwen2.5:7b</span><span class="pill">temp 0 · seed 17</span><span class="pill">1 attempt/task</span><span class="pill" id="d-at"></span></div></div>
+        <div class="vbody">
+          <div class="kpis" id="kpis"></div>
+          <div class="dgrid">
+            <div class="card" id="d-mx"></div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="card" id="d-bars"></div>
+              <div class="card" id="d-hist"></div>
+            </div>
+          </div>
+        </div>
+        <div class="term" id="term"><div class="tb"><i></i><i></i><i></i><span style="margin-left:8px">metagrader · offline suite</span></div><pre id="term-pre"></pre></div>
+      </section>
+      <!-- CASES -->
+      <section class="view" id="v-cases">
+        <div class="vhead"><h2>Six cases</h2><span class="idchip">qwen2.5:7b run · 1 attempt</span>
+          <div style="margin-left:auto;display:flex;gap:6px" id="c-badges"></div></div>
+        <div class="vbody"><div class="cwrap"><div class="cgrid" id="cgrid"></div><div class="card cdetail" id="cdetail"></div></div></div>
+      </section>
+    </main>
+  </div>
+  <div id="ripple"></div>
+  <div id="cursor"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 2.5v17.2l4.6-4.3 3 6.6 3.1-1.4-3-6.5h6.3z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+</div>
+
+<!-- OPENING -->
+<div class="ov" id="ov-open">
+  <div class="center" style="top:150px"><svg id="logo" width="96" height="96" viewBox="0 0 40 40"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a596ff"/><stop offset="1" stop-color="#5fe3c8"/></linearGradient></defs><circle id="ring" cx="20" cy="20" r="14" fill="none" stroke="url(#lg2)" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="0 88" transform="rotate(-40 20 20)"/></svg></div>
+  <div class="center wm" id="o-wm" style="top:262px">Lacuna</div>
+  <div class="center kicker" id="o-kick" style="top:372px">Rubric Partner Eval · micro1 Eval Hackathon</div>
+  <div class="center l1" id="o-prob" style="top:420px">Incomplete rubric, wrong grade.</div>
+  <div class="center l2" id="o-prom" style="top:472px">We measure whether an LLM finds the gap — <b>with literal evidence and human review.</b></div>
+</div>
+<!-- CLOSING -->
+<div class="ov" id="ov-close">
+  <div class="center kicker" id="h-k" style="top:92px">Hypothesis · exploratory run</div>
+  <div class="center" id="h-t" style="top:130px"><div class="hyp">The model finds <em>explicit omissions</em>, but struggles to <em>ask for missing context</em>, <em>use the history</em>, and <em>make vague criteria verifiable</em>.</div></div>
+  <div class="center" id="h-d" style="top:262px;font:500 15px var(--mono);color:var(--muted)"></div>
+  <div class="center" style="top:322px"><div class="lim" id="lim">
+    <div><b>Scope</b>6 synthetic tasks in one domain</div>
+    <div><b>Model</b>1 local model: qwen2.5:7b</div>
+    <div><b>Sample</b>1 attempt per task, temperature 0</div>
+    <div><b>Grader</b>Lexical proxy; answer keys pending human adjudication</div>
+  </div><div class="next" id="next"><b>Next step</b>Freeze answer keys and weights · frontier models · 3–5 attempts per task · publish raw responses</div></div>
+</div>
+<div class="ov" id="ov-end">
+  <div class="center" style="top:196px"><svg width="84" height="84" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="url(#lg2)" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="70 18" transform="rotate(-40 20 20)"/></svg></div>
+  <div class="center wm" style="top:296px;font-size:80px">Lacuna</div>
+  <div class="center l2" style="top:398px">A good grader starts with a good rubric.</div>
+  <div class="center" style="top:462px;font:500 13px/1.8 var(--mono);color:var(--faint)">Rubric Partner Eval · micro1 Eval Hackathon · Thiago Penaloza<br><span id="end-data"></span></div>
+</div>
+<div id="caps"><div id="cap"></div></div>
+<div id="fade"></div>
+
+<script>
+(() => {
+const D = window.LACUNA_DATA, TL = window.LACUNA_TIMELINE;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const stripTicks = t => String(t).split(String.fromCharCode(96)).join("");
+const E = {
+  lin: p => p,
+  out: p => 1 - Math.pow(1 - p, 3),
+  inOut: p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  expo: p => p >= 1 ? 1 : 1 - Math.pow(2, -9 * p),
+  back: p => { const c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); },
+};
+const C = id => D.cases.find(c => c.id === id);
+const SC = id => TL.scenes.find(s => s.id === id);
+const LN = id => TL.lines.find(l => l.id === id);
+window.__sfx = [];
+const sfx = (type, gain = 1) => window.__sfx.push({ t: NOW, type, gain });
+
+/* ---------- deterministic animation engine ---------- */
+let NOW = 0;
+const TWS = [];
+function tween(dur, fn, ease = E.inOut, delay = 0) { TWS.push({ s: NOW + delay, d: Math.max(dur, 1e-4), fn, ease }); }
+function step(t) {
+  for (let i = 0; i < TWS.length; i++) {
+    const w = TWS[i];
+    if (t < w.s) continue;
+    const p = clamp((t - w.s) / w.d);
+    w.fn(w.ease(p), p);
+    if (p >= 1) { TWS.splice(i, 1); i--; }
+  }
+}
+const ST = new WeakMap();
+const S = el => { if (!ST.has(el)) ST.set(el, { o: +getComputedStyle(el).opacity, x: 0, y: 0, s: 1, r: 0, b: 0 }); return ST.get(el); };
+function applyS(el) {
+  const s = S(el);
+  el.style.opacity = s.o.toFixed(4);
+  el.style.transform = `perspective(1600px) translate(${s.x.toFixed(2)}px,${s.y.toFixed(2)}px) rotateX(${s.r.toFixed(3)}deg) scale(${s.s.toFixed(4)})`;
+  el.style.filter = s.b > .05 ? `blur(${s.b.toFixed(2)}px)` : "none";
+}
+function set(el, props) { Object.assign(S(el), props); applyS(el); }
+function anim(el, to, dur = .6, ease = E.inOut, delay = 0) {
+  let from = null;
+  TWS.push({ s: NOW + delay, d: Math.max(dur, 1e-4), ease, fn: p => {
+    const st = S(el);
+    if (!from) { from = {}; for (const k in to) from[k] = st[k]; }
+    for (const k in to) st[k] = from[k] + (to[k] - from[k]) * p;
+    applyS(el);
+  } });
+}
+const show = (el, dur = .5, delay = 0, dy = 10) => { set(el, { o: 0, y: dy }); anim(el, { o: 1, y: 0 }, dur, E.out, delay); };
+const hide = (el, dur = .35, delay = 0) => anim(el, { o: 0 }, dur, E.inOut, delay);
+function typeText(el, text, dur, delay = 0) {
+  TWS.push({ s: NOW + delay, d: dur, ease: E.lin, fn: (p) => {
+    el.textContent = text.slice(0, Math.round(text.length * p));
+    el.classList.toggle("typing", p < 1);
+  } });
+}
+function cssVar(el, name, from, to, dur, unit = "", ease = E.inOut, delay = 0) {
+  tween(dur, p => el.style.setProperty(name, (from + (to - from) * p).toFixed(3) + unit), ease, delay);
+}
+function countTo(el, to, dur, fmt = v => Math.round(v), delay = 0) { tween(dur, p => el.textContent = fmt(to * p), E.out, delay); }
+
+/* ---------- camera, cursor, and positions ---------- */
+const cam = $("#cam"), cur = $("#cursor"), rip = $("#ripple");
+const CAM = { x: 0, y: 0, s: 1 };
+const applyCam = () => cam.style.transform = `translate(${CAM.x.toFixed(2)}px,${CAM.y.toFixed(2)}px) scale(${CAM.s.toFixed(4)})`;
+function camTo(to, dur = 1.1, ease = E.inOut, delay = 0) {
+  let from = null;
+  TWS.push({ s: NOW + delay, d: dur, ease, fn: p => {
+    if (!from) from = { ...CAM };
+    for (const k of ["x", "y", "s"]) CAM[k] = from[k] + (to[k] - from[k]) * p;
+    applyCam();
+  } });
+}
+function pos(el) {
+  let x = 0, y = 0, n = el;
+  while (n && n !== cam) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+  return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+}
+function focus(el, s = 1.4, dur = 1.1, { dx = 0, dy = 0, cy = 332, delay = 0 } = {}) {
+  const r = pos(el);
+  const cx = r.x + r.w / 2 + dx, cyy = r.y + r.h / 2 + dy;
+  let x = 640 - cx * s, y = cy - cyy * s;
+  // keep the window framing the screen: no large empty areas around it when zoomed
+  const wl = 64, wr = 1216, wt = 44, wb = 644;
+  const xmax = 40 - wl * s, xmin = 1240 - wr * s, ymax = 30 - wt * s, ymin = 660 - wb * s;
+  x = xmin > xmax ? (xmin + xmax) / 2 : Math.min(xmax, Math.max(xmin, x));
+  y = ymin > ymax ? (ymin + ymax) / 2 : Math.min(ymax, Math.max(ymin, y));
+  camTo({ s, x, y }, dur, E.inOut, delay);
+}
+const camHome = (dur = 1.1, delay = 0) => camTo({ x: 0, y: 0, s: 1 }, dur, E.inOut, delay);
+const CUR = { x: 900, y: 600, o: 0, s: 1 };
+const applyCur = () => { cur.style.transform = `translate(${CUR.x - 5}px,${CUR.y - 3}px) scale(${CUR.s})`; cur.style.opacity = CUR.o; };
+function cursorTo(target, dur = .8, { dx = 0, dy = 0, delay = 0 } = {}) {
+  let from = null, to;
+  TWS.push({ s: NOW + delay, d: dur, ease: E.inOut, fn: p => {
+    if (!from) {
+      from = { ...CUR };
+      if (target instanceof Element) { const r = pos(target); to = { x: r.x + r.w / 2 + dx, y: r.y + r.h / 2 + dy }; }
+      else to = target;
+    }
+    CUR.x = from.x + (to.x - from.x) * p; CUR.y = from.y + (to.y - from.y) * p; applyCur();
+  } });
+}
+const cursorShow = (o = 1, dur = .3, delay = 0) => tween(dur, (() => { let f = null; return p => { if (f === null) f = CUR.o; CUR.o = f + (o - f) * p; applyCur(); }; })(), E.inOut, delay);
+function click(btn) {
+  sfx("click");
+  tween(.5, (p, raw) => {
+    CUR.s = raw < .3 ? 1 - .18 * (raw / .3) : .82 + .18 * ((raw - .3) / .7); applyCur();
+    rip.style.left = CUR.x + "px"; rip.style.top = CUR.y + "px";
+    rip.style.opacity = (1 - raw).toFixed(3); rip.style.transform = `scale(${.4 + raw * 1.3})`;
+  }, E.lin);
+  if (btn) { set(btn, { s: 1 }); tween(.32, (p, raw) => { S(btn).s = 1 - .05 * Math.sin(Math.PI * raw); applyS(btn); }, E.lin); }
+}
+
+/* ---------- content ---------- */
+const inc = C("incident_01");
+const KIND = k => `<span class="badge k-${k}">${k}</span>`;
+const okx = (b) => `<span class="${b ? "yes" : "no"}">${b ? "✓" : "✗"}</span>`;
+const fmtUTC = iso => iso.replace("T", " ").replace(/:\d\dZ$/, " UTC");
+$("#runat").textContent = "recorded " + fmtUTC(D.run.started_at);
+$("#d-dir").textContent = D.run.dir;
+$("#end-data").textContent = `${D.metrics.tasks} tasks · ${D.tests.ran} tests · data in ${D.run.dir}`;
+$("#h-d").textContent = `qwen2.5:7b · protocol ${D.metrics.format_passed}/${D.metrics.tasks} · content proxy ${D.metrics.content_proxy_passed}/${D.metrics.tasks} · correct status ${D.metrics.status_correct}/${D.metrics.tasks}`;
+$("#c-badges").innerHTML = `<span class="badge okb">✓ protocol ${D.metrics.format_passed}/${D.metrics.tasks}</span><span class="badge ${D.metrics.content_proxy_passed === D.metrics.tasks ? "okb" : "badb"}">content proxy ${D.metrics.content_proxy_passed}/${D.metrics.tasks}</span><span class="badge neutral">provisional team reading</span>`;
+$("#d-at").textContent = fmtUTC(D.run.started_at);
+
+const SHORT = { incident_01: "Omissions", context_02: "Context", ambiguity_03: "Ambiguity", feedback_04: "Feedback", code_05: "Code", iteration_06: "Iteration" };
+$("#clist").innerHTML = D.cases.map(c => `<div class="citem" data-id="${c.id}"><em>0${c.n}</em>${esc(SHORT[c.id])}<span class="st"><i></i><i></i></span></div>`).join("");
+function caseDots(id) {
+  const c = C(id), el = $(`.citem[data-id="${id}"] .st`).children;
+  el[0].style.background = c.format_passed ? "var(--ok)" : "var(--bad)";
+  el[1].style.background = c.grader.passed ? "var(--ok)" : "var(--bad)";
+}
+function selCase(id) { $$(".citem").forEach(n => n.classList.toggle("on", n.dataset.id === id)); }
+function nav(v) { $$("#nav div").forEach(n => n.classList.toggle("on", n.dataset.v === v)); }
+let curView = null;
+function view(v, dur = .55) {
+  const next = $("#v-" + v);
+  if (curView && curView !== next) { const prev = curView; anim(prev, { o: 0, y: -8 }, dur * .7, E.inOut); }
+  set(next, { o: 0, y: 12 }); anim(next, { o: 1, y: 0 }, dur, E.out, curView ? dur * .35 : 0);
+  curView = next; nav(v);
+}
+function chapter(n, t) {
+  const el = $("#chapter");
+  anim(el, { o: 0 }, .25);
+  tween(.01, () => { $("#chn").textContent = n; $("#cht").textContent = t; }, E.lin, .26);
+  anim(el, { o: 1 }, .4, E.out, .28);
+}
+
+// pipeline steps
+const stepsEl = $$("#steps .stp");
+function stepState(i, st) {
+  const s = stepsEl[i];
+  s.classList.remove("act", "done", "fail"); if (st) s.classList.add(st);
+  s.querySelector("i").textContent = st === "done" ? "✓" : st === "fail" ? "✗" : "";
+  if (st === "act") tween(1.2, p => s.style.setProperty("--spin", (p * 720) + "deg"), E.lin);
+}
+
+// payload sent
+const P = inc.raw_response && { task_id: inc.id, ...inc.input };
+const jsonHTML = (txt) => esc(txt)
+  .replace(/(&quot;[a-z_]+&quot;)(\s*:)/g, '<span class="k">$1</span>$2')
+  .replace(/:\s*(&quot;.*?&quot;)/g, (m, v) => ': <span class="s">' + v + '</span>')
+  .replace(/\b(true|false)\b/g, '<span class="b">$1</span>');
+$("#L-payload").innerHTML = `
+  <div class="lbl" style="margin-bottom:8px">Payload sent to the model · eval/run_ollama.py</div>
+  <div class="codebox code" style="height:178px">${jsonHTML(JSON.stringify(P, null, 2))}</div>
+  <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span class="lbl" style="margin-right:2px">Out of the prompt</span>
+    <span class="badge badb">expected_findings</span><span class="badge badb">expected_status</span><span class="badge badb">rejection_patterns</span>
+  </div>
+  <p style="margin-top:12px;font:500 12.5px/1.5 var(--ui);color:var(--muted)">The runner sends only <b style="color:var(--text)">task_id</b> and the input fields. The answer key exists only in the metagrader.</p>`;
+
+const R = D.repro;
+$("#L-model").innerHTML = `
+  <div class="fcard" style="padding:16px 18px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(165,150,255,.25),rgba(95,227,200,.2));border:1px solid var(--line2);font:700 15px var(--mono)">7B</div>
+      <div><div style="font:650 17px var(--ui)">qwen2.5:7b</div><div style="font:500 12px var(--ui);color:var(--muted)">Local Ollama · no API cost</div></div>
+      <span class="badge okb" id="m-done" style="margin-left:auto;opacity:0">response received</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
+      <span class="badge neutral">temperature 0</span><span class="badge neutral">seed 17</span><span class="badge neutral">format: json</span><span class="badge neutral" id="m-tok">eval_count ${inc.eval_count}</span>
+    </div>
+  </div>
+  <div class="fcard" style="margin-top:12px;padding:12px 16px;background:rgba(255,181,71,.06);border-color:rgba(255,181,71,.3)">
+    <div style="display:flex;align-items:center;gap:10px"><span class="pill"><span class="dot"></span>REPLAY</span><span style="font:500 12.5px var(--ui)">Run recorded at <b>${fmtUTC(D.run.started_at)}</b> · ${esc(D.run.dir)}</span></div>
+  </div>
+  <div class="fcard" id="m-repro" style="margin-top:12px;padding:12px 16px;background:rgba(63,220,156,.07);border-color:rgba(63,220,156,.35);opacity:0">
+    <div style="display:flex;align-items:center;gap:10px"><span class="yes">✓</span><span style="font:500 12.5px/1.45 var(--ui)">Local rerun at <b>${R ? fmtUTC(R.rerun_started_at) : "—"}</b>: <b style="color:var(--ok)">${R ? R.identical + "/" + R.total : "—"} responses identical</b> to the recording (same raw_response and eval_count).</span></div>
+  </div>`;
+
+$("#L-json").innerHTML = `
+  <div style="display:flex;align-items:center;margin-bottom:8px"><span class="lbl">Raw response · raw_response</span><span class="badge okb" id="j-ok" style="margin-left:auto;opacity:0">✓ valid protocol</span></div>
+  <div class="codebox code" id="j-code" style="height:304px"></div>`;
+
+const F = inc.findings[0];
+const yn = (b, t) => `<span class="badge ${b ? "okb" : "badb"} gc">${b ? "✓" : "✗"} ${t}</span>`;
+const LOC = F.evidence_location;
+$("#L-card").innerHTML = `<div id="cardscroll">
+  <div class="fcard" id="fc" style="padding:12px 15px">
+    <div style="display:flex;gap:6px;align-items:center">${KIND(F.kind)}<span class="badge neutral">criterion_ref: ${esc(F.criterion_ref)}</span><span class="badge neutral">confidence: ${esc(F.confidence)}</span></div>
+    <div class="fsec" id="fs-ev"><span class="lbl">Evidence</span><div class="quote">“${esc(F.evidence)}”</div>
+      <span class="check ${LOC.literal ? "ok" : "bad"}" id="ev-ok" style="opacity:0">${LOC.literal ? `✓ literal excerpt of the <b>${esc(LOC.field)}</b> field` : "✗ not a literal excerpt of the input"}</span></div>
+    <div class="fsec" id="fs-im"><span class="lbl">Impact</span><p>${esc(F.impact)}</p></div>
+    <div class="fsec" id="fs-qu"><span class="lbl">Question</span><p>${esc(F.question)}</p></div>
+    <div class="fsec" id="fs-su"><span class="lbl">Suggestion · optional</span><p class="sugg">${esc(F.suggestion)}</p></div>
+  </div>
+  <div class="grow" id="gchips" style="border-top:0;margin-top:9px;padding-top:0">
+    <span class="lbl">Metagrader · lexical proxy</span>
+    ${inc.grader.matched_ids.map(i => `<span class="badge okb gc">✓ ${i}</span>`).join("")}
+    ${yn(inc.grader.status_correct, inc.grader.status_correct ? `status ${inc.response.status}` : `status ${inc.response.status} · expected ${inc.expected_status}`)}
+    ${yn(F.grader.suggestion_verifiable_proxy, "verifiable suggestion")}
+    <span class="badge ${inc.grader.passed ? "okb" : "badb"} gc" style="font-size:11.5px;height:24px">CONTENT PROXY: ${inc.grader.passed ? "PASSED" : "FAILED"}</span>
+  </div></div>`;
+$$("#L-card .fsec, #gchips .gc").forEach(n => set(n, { o: 0 }));
+
+/* human review */
+const sugg = F.suggestion;
+$("#g-find").innerHTML = `
+  <div style="display:flex;gap:6px;align-items:center"><span class="lbl">Suggestion under review</span><span style="margin-left:auto">${KIND(F.kind)}</span></div>
+  <div class="sugg" style="margin-top:9px;font:500 12.5px/1.45 var(--ui)">${esc(sugg)}</div>`;
+const g = inc.grader, d0 = F.grader;
+const sig = (ok, label, small) => `<div class="sig"><span class="ic ${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"}</span>${label}<small>${small}</small></div>`;
+$("#g-sig").innerHTML = `
+  <div class="chead"><h3>Metagrader signal</h3><small>lexical proxy, conservative</small></div>
+  <div style="padding:4px 15px" id="sigs">
+    ${sig(inc.format_passed, "JSON protocol", "format.passed")}
+    ${sig(g.missing_ids.length === 0, "Answer-key requirements found", `${g.matched_ids.length}/${inc.expected_findings.length}`)}
+    ${sig(d0.literal_evidence_present, "Literal evidence from the input", d0.literal_evidence_present)}
+    ${sig(g.status_correct, `Status ${inc.response.status}`, `expected ${inc.expected_status}`)}
+    ${sig(d0.suggestion_verifiable_proxy, "Verifiable suggestion", d0.suggestion_verifiable_proxy)}
+  </div>
+  <div id="sig-note" style="margin:4px 15px 13px;padding:9px 12px;border-radius:9px;background:${g.passed ? "rgba(63,220,156,.08)" : "rgba(255,99,120,.08)"};border:1px solid ${g.passed ? "rgba(63,220,156,.3)" : "rgba(255,99,120,.3)"};font:500 12px/1.4 var(--ui)">
+    <b style="color:${g.passed ? "var(--ok)" : "#ff8b9b"}">Proxy ${g.passed ? "passed" : "failed"}</b> — it is a <b>conservative signal, not a verdict</b>.</div>`;
+$("#g-gate").innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5fe3c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+    <div style="font:650 16px var(--ui)">Human gate</div>
+    <span class="badge okb" style="margin-left:auto">human_decision_required: ${inc.response.human_decision_required}</span></div>
+  <p style="margin-top:8px;font:500 12.5px/1.45 var(--ui);color:var(--muted)">No suggestion enters the rubric without the author's decision.</p>
+  <div class="gbtns" style="margin-top:12px"><span class="btn acc" id="b-acc">Accept</span><span class="btn edt" id="b-edt">Edit</span><span class="btn rej" id="b-rej">Reject</span></div>
+  <div id="ed-wrap" style="opacity:0"><div style="display:flex;align-items:center;margin-top:12px"><span class="lbl">Human edit</span><span style="margin-left:auto;font:500 10.5px var(--ui);color:var(--faint)">simulated in this demo · not model output</span></div>
+  <div class="editor" id="editor" style="margin-top:6px"></div>
+  <div style="display:flex;margin-top:10px"><span class="btn primary" id="b-save" style="margin-left:auto">Record decision</span></div></div>`;
+$("#g-adj").innerHTML = `
+  <div style="display:flex;align-items:center;gap:8px"><span class="lbl" style="color:var(--amber)">Human adjudication · pending</span><span class="badge neutral" style="margin-left:auto">grader only</span></div>
+  <div style="margin-top:7px;font:600 10.5px var(--mono);color:var(--muted)">IDs in the grader: ${inc.expected_findings.map(f => f.id).join(" · ")}</div>
+  <div style="margin-top:6px;font:500 11px/1.38 var(--ui);color:var(--text)"><span style="color:var(--muted)">Synthetic answer key (EVAL_SPEC_V2):</span> ${esc(stripTicks(inc.answer_key_spec))}</div>`;
+const EDIT_TEXT = "C2: Records the start time of the incident.\nC3: Describes the observable impact on users.\nC4: Describes the recovery action and its outcome.";
+
+/* dashboard */
+const M = D.metrics, T = D.tests;
+const pct = (a, b) => Math.round(100 * a / b) + "%";
+const KP = [
+  { l: "Tasks", v: M.tasks, sub: "1 attempt each", cls: "" },
+  { l: "Tests", v: T.ran, sub: T.ok ? "all passing" : "failures", cls: T.ok ? "good" : "badk", w: 100 },
+  { l: "Protocol", v: M.format_passed, of: M.tasks, sub: pct(M.format_passed, M.tasks) + " · JSON " + M.parseable + "/" + M.tasks, cls: M.format_passed === M.tasks ? "good" : "badk", w: 100 * M.format_passed / M.tasks },
+  { l: "Content proxy", v: M.content_proxy_passed, of: M.tasks, sub: pct(M.content_proxy_passed, M.tasks) + " passed", cls: M.content_proxy_passed === M.tasks ? "good" : M.content_proxy_passed === 0 ? "badk" : "mid", w: 100 * M.content_proxy_passed / M.tasks },
+  { l: "Correct status", v: M.status_correct, of: M.tasks, sub: M.status_missed.length ? "miss: " + M.status_missed.join(", ") : "no misses", cls: "", w: 100 * M.status_correct / M.tasks },
+  { l: "Literal evid.", v: M.findings_literal, of: M.findings_total, sub: "literal findings", cls: "", w: 100 * M.findings_literal / M.findings_total },
+];
+$("#kpis").innerHTML = KP.map((k, i) => `<div class="kpi ${k.cls}" id="kpi${i}"><span class="lbl">${k.l}</span><div class="v"><span class="num">–</span>${k.of ? `<small>/${k.of}</small>` : ""}</div><div class="sub">${k.sub}</div><div class="bar"></div></div>`).join("");
+const COLS = [["JSON", c => [true]], ["Protocol", c => [c.format_passed]], ["Status", c => [c.grader.status_correct]],
+  ["IDs", c => [c.grader.missing_ids.length === 0, `${c.grader.matched_ids.length}/${c.expected_findings.length}`]],
+  ["Literal evid.", c => [c.findings.every(f => f.grader.literal_evidence_present), `${c.findings.filter(f => f.grader.literal_evidence_present).length}/${c.findings.length}`]],
+  ["Proxy", c => [c.grader.passed]]];
+$("#d-mx").innerHTML = `<div class="chead"><h3>Task × check</h3><small>metagrader.grade() on the recorded responses</small></div>
+  <table class="mx"><tr><th>Case</th>${COLS.map(c => `<th>${c[0]}</th>`).join("")}</tr>
+  ${D.cases.map(c => `<tr class="mrow"><td><b>0${c.n} ${esc(c.title)}</b><small>${c.id}</small></td>${COLS.map(col => { const [b, f] = col[1](c); return `<td>${okx(b)}${f ? `<small>${f}</small>` : ""}</td>`; }).join("")}</tr>`).join("")}</table>`;
+const bar = (lab, m, e, max) => `<div class="brow"><span>${lab}</span><div class="bt m" data-w="${100 * m / max}"><i></i><span>${m}</span></div><div class="bt e" data-w="${100 * e / max}"><i></i><span>${e}</span></div></div>`;
+$("#d-bars").innerHTML = `<div class="chead"><h3>Model vs. answer key</h3><small>status per task · kind per finding</small></div><div class="bars">
+  <div class="brow h"><span></span><span>MODEL</span><span>ANSWER KEY</span></div>
+  ${bar("needs_context", M.status_model.needs_context, M.status_expected.needs_context, 9)}
+  ${bar("review_ready", M.status_model.review_ready, M.status_expected.review_ready, 9)}
+  <div style="height:6px"></div>
+  ${["omission", "insufficient_context", "ambiguity"].map(k => bar(k, M.kinds_model[k], M.kinds_expected[k], 9)).join("")}</div>`;
+const RP = D.repro;
+$("#d-hist").innerHTML = `<div class="chead"><h3>Rerun check</h3><small>${RP ? RP.identical + "/" + RP.total : "—"} identical raw_response · tokens per task</small></div><div class="hist">
+  ${(RP ? RP.tasks : []).map(r => `<div class="hv"><div class="hr"><b>0${C(r.task_id).n}</b><span class="v" style="color:${r.identical ? "var(--ok)" : "var(--bad)"}">${r.identical ? "✓" : "✗"}</span></div><small>${r.eval_count_recorded}</small></div>`).join("")}</div>`;
+$("#term-pre").innerHTML = (() => {
+  const lines = ["<span class=\"cmd\">$ " + esc(T.command) + "</span>", ...T.lines.map(l => {
+    const m = l.match(/^(test_\w+) \(.*\) \.\.\. ok$/);
+    return m ? esc(m[1]) + " ... <span class=\"okl\">ok</span>" : (l.startsWith("OK") || l.startsWith("Ran") ? "<span class=\"okl\">" + esc(l) + "</span>" : esc(l));
+  })];
+  return lines.map(l => `<div class="tl">${l}</div>`).join("");
+})();
+
+/* cases */
+function hl(text, word, cls) { const i = text.indexOf(word); return i < 0 ? esc(text) : esc(text.slice(0, i)) + `<mark class="${cls}">${esc(word)}</mark>` + esc(text.slice(i + word.length)); }
+function hlAll(text, marks) {
+  let html = esc(text);
+  marks.forEach(([w, cls]) => { const e = esc(w); if (html.includes(e)) html = html.replace(e, `<mark class="${cls}">${e}</mark>`); });
+  return html;
+}
+const MUTED = t => `<span style="color:var(--muted)">${t}</span>`;
+const QUOTE = {
+  incident_01: c => `<span class="lbl">Model suggestion</span>${hlAll(c.findings[0].suggestion, [["records the start time", "good"], ["impact on users", "good"], ["recovery action", "good"]])}`,
+  context_02: c => `<span class="lbl">Model question</span>${esc(c.findings[0].question)}<br>${MUTED("input context: “" + esc(c.input.context) + "”")}`,
+  ambiguity_03: c => `<span class="lbl">Model suggestion</span>${hl(c.findings[0].suggestion, "Clarify the timeframe", "bad")}<br>${MUTED("context: “" + hl(c.input.context, "within 2 business days", "good") + "”")}`,
+  feedback_04: c => `<span class="lbl">Generic feedback in the history · not addressed</span>“${esc(c.input.history.partner_feedback)}”<br>${MUTED("model suggestion: " + esc(c.findings[0].suggestion))}`,
+  code_05: c => `<span class="lbl">Model suggestion</span>${hlAll(c.findings[0].suggestion, [["converts valid ISO dates to date objects", "good"], ["returns an explicit error for invalid date formats without terminating the process", "good"]])}`,
+  iteration_06: c => `<span class="lbl">History + suggestion</span>${MUTED("history: “" + esc(c.input.history.author_decision) + "”")}<br>${hl(c.findings[0].suggestion, "deadline of up to 2 business days", "good")}`,
+};
+const uniq = a => [...new Set(a)];
+function checksHTML(c) {
+  const lit = c.findings.filter(f => f.grader.literal_evidence_present).length, ids = c.grader.missing_ids.length === 0;
+  const it = (ok, t) => `<span><i class="${ok ? "o" : "x"}">${ok ? "✓" : "✗"}</i>${t}</span>`;
+  return it(c.format_passed, "protocol") + it(ids, `IDs ${c.grader.matched_ids.length}/${c.expected_findings.length}`) +
+    it(lit === c.findings.length, `evid. ${lit}/${c.findings.length}`) + it(c.grader.passed, "proxy");
+}
+$("#cgrid").innerHTML = D.cases.map(c => `<div class="ccard" id="cc-${c.id}">
+    <div class="top"><span class="num">0${c.n}</span><div><div class="ttl">${esc(c.title)}</div><div class="cid">${c.id}</div></div></div>
+    <div class="chips"><span class="badge ${c.grader.status_correct ? "okb" : "badb"}">${c.grader.status_correct ? "✓" : "✗"} ${c.response.status}</span></div>
+    <div class="chk">${checksHTML(c)}</div></div>`).join("");
+function detailHTML(c) {
+  const mk = uniq(c.findings.map(f => f.kind)), ek = uniq(c.expected_findings.map(f => f.kind));
+  const pv = c.provisional || { reading: "", main_failure: "" };
+  return `<div class="dh"><span class="num">0${c.n}</span><span class="ttl">${esc(c.title)}</span><span class="cid">${c.id}</span></div>
+    <div class="drow"><span class="lbl">Status</span><div><span class="badge ${c.grader.status_correct ? "okb" : "badb"}">${c.grader.status_correct ? "✓" : "✗"} model: ${c.response.status}</span><span class="vs">answer key</span><span class="badge neutral">${c.expected_status}</span></div></div>
+    <div class="drow"><span class="lbl">Kind</span><div>${mk.map(KIND).join("")}<span class="vs">answer key</span>${ek.map(k => `<span class="badge neutral">${k}</span>`).join("")}</div></div>
+    <div class="dq">${QUOTE[c.id](c)}</div>
+    <div class="chk" style="margin-top:12px;font-size:11px">${checksHTML(c)}</div>
+    <div class="dprov"><span class="lbl">Provisional team reading · not final adjudication</span>
+      <p><i style="color:var(--ok)">✓</i><span>${esc(stripTicks(pv.reading))}</span></p>
+      <p><i style="color:var(--bad)">✗</i><span>${esc(stripTicks(pv.main_failure))}</span></p></div>`;
+}
+
+/* ---------- initial state ---------- */
+const win = $("#win");
+set(win, { o: 0, y: 120, s: .9, r: 16 });
+["#v-analyze", "#v-gate", "#v-dash", "#v-cases", "#ov-open", "#ov-close", "#ov-end", "#chapter", "#toast", "#term", "#L-payload", "#L-model", "#L-json", "#L-card"].forEach(s => set($(s), { o: 0 }));
+set($("#L-empty"), { o: 1 });
+applyCam(); applyCur();
+
+/* ---------- script ---------- */
+const CUES = [];
+const at = (t, fn) => CUES.push({ t, fn });
+const sOpen = SC("open"), sIn = SC("input"), sAn = SC("analysis"), sGate = SC("gate"), sDash = SC("dash"), sCases = SC("cases"), sClose = SC("close");
+
+// 0 · opening (name, problem, promise)
+at(0, () => {
+  set($("#ov-open"), { o: 1 });
+  ["#o-wm", "#o-kick", "#o-prob", "#o-prom", "#logo"].forEach(s => set($(s), { o: 0 }));
+  sfx("boom", .9);
+  anim($("#logo"), { o: 1 }, .5, E.out, .05);
+  tween(1.3, p => $("#ring").setAttribute("stroke-dasharray", `${(70 * p).toFixed(2)} 88`), E.out, .1);
+  set($("#o-wm"), { o: 0, y: 18, b: 8 }); anim($("#o-wm"), { o: 1, y: 0, b: 0 }, .9, E.out, .3);
+  show($("#o-kick"), .7, .8, 8);
+});
+at(LN("open1").captions[1].start - .1, () => { set($("#o-prob"), { o: 0, y: 14, b: 6 }); anim($("#o-prob"), { o: 1, y: 0, b: 0 }, .7, E.out); });
+at(LN("open2").start - .05, () => { set($("#o-prom"), { o: 0, y: 14, b: 6 }); anim($("#o-prom"), { o: 1, y: 0, b: 0 }, .7, E.out); });
+at(sOpen.end - .45, () => {
+  sfx("whoosh", .8);
+  anim($("#ov-open"), { o: 0, y: -40, b: 6 }, .8, E.inOut);
+  view("analyze", .01); selCase("incident_01");
+  anim(win, { o: 1, y: 0, s: 1, r: 0 }, 1.25, E.expo, .15);
+});
+
+// 1 · input
+at(sIn.start + .1, () => { chapter("01", "Input · goal, context, rubric_draft"); });
+at(LN("input1").start + .2, () => { cursorShow(1, .3); cursorTo($("#f-goal"), .9, { dx: 120 }); });
+at(LN("input1").start + .9, () => { typeText($("#f-goal"), inc.input.goal, 1.1); });
+at(LN("input1").start + 2.4, () => { cursorTo($("#f-context"), .7, { dx: 120 }); focus($("#f-context"), 1.5, 1.3, { dx: 150, dy: 10 }); });
+at(LN("input1").start + 3.0, () => { typeText($("#f-context"), inc.input.context, 2.2); });
+at(LN("input2").start + 1.0, () => {
+  // narrative emphasis on the three requirements in the context (not model output)
+  const ctx = inc.input.context, words = ["start time", "impact on users", "recovery action"];
+  let html = esc(ctx); words.forEach(w => html = html.replace(esc(w), `<mark class="soft">${esc(w)}</mark>`));
+  $("#f-context").innerHTML = html;
+  $$("#f-context mark.soft").forEach((m, i) => cssVar(m, "--u", 0, .75, .5, "", E.out, .9 + i * 1.15));
+});
+at(LN("input2").captions[2].start - .3, () => { cursorTo($("#f-rubric"), .6, { dx: 120 }); typeText($("#f-rubric"), inc.input.rubric_draft, 1.4, .4); });
+at(sIn.end - .7, () => { camHome(1.0); });
+
+// 2 · analysis
+at(sAn.start + .05, () => chapter("02", "Partner analysis"));
+at(LN("an1").start + .1, () => { cursorTo($("#btn-analyze"), .9); });
+at(LN("an1").start + 1.05, () => {
+  click($("#btn-analyze"));
+  $$("#f-context mark.soft").forEach(m => cssVar(m, "--u", .75, 0, .4));
+  stepState(0, "act"); hide($("#L-empty"), .3); show($("#L-payload"), .5, .15);
+  focus($("#rpanel"), 1.22, 1.2, { dy: 10, delay: .2 });
+});
+at(LN("an1").start + 1.6, () => cursorShow(0, .4, .4));
+at(LN("an1").start + 2.4, () => { stepState(0, "done"); sfx("pop", .5); });
+at(LN("an2").start + .1, () => { stepState(1, "act"); hide($("#L-payload"), .3); show($("#L-model"), .5, .2); });
+at(LN("an2").start + 3.5, () => { show($("#m-done"), .4); stepState(1, "done"); sfx("pop", .5); });
+at(LN("an2").captions[2].start - .1, () => { show($("#m-repro"), .5, 0, 8); focus($("#m-repro"), 1.5, 1.0); });
+at(LN("an3").start - .1, () => {
+  stepState(2, "act"); hide($("#L-model"), .3); show($("#L-json"), .4, .2);
+  focus($("#rpanel"), 1.25, 1.0, { dy: 30 });
+  const code = $("#j-code"), raw = inc.raw_response;
+  tween(4.2, p => { code.innerHTML = jsonHTML(raw.slice(0, Math.round(raw.length * p))); }, E.lin, .3);
+});
+at(LN("an3").start + 4.8, () => { stepState(2, "done"); show($("#j-ok"), .35); sfx("pop", .6); });
+// finding card
+at(LN("an4").start - .05, () => {
+  stepState(3, "act"); hide($("#L-json"), .35); set($("#L-card"), { o: 1 });
+  show($("#fc"), .6, .1, 16); show($("#fs-ev"), .5, .5);
+  camHome(1.0);
+});
+at(LN("an4").captions[1].start, () => {
+  // literal evidence highlighted in the input text
+  const loc = F.evidence_location, ctx = inc.input.context;
+  $("#f-context").innerHTML = esc(ctx.slice(0, loc.start)) + `<mark class="ev">${esc(ctx.slice(loc.start, loc.end))}</mark>` + esc(ctx.slice(loc.end));
+  const mk = $("#f-context mark.ev");
+  focus($("#f-context"), 1.5, 1.0, { dx: 260 });
+  cssVar(mk, "--w", 0, 100, 1.4, "%", E.inOut, .6); cssVar(mk, "--u", 0, 1, .5, "", E.out, 1.6);
+  sfx("whoosh", .35);
+});
+at(LN("an4").captions[1].end - .6, () => { focus($("#fs-ev"), 1.45, 1.0); show($("#ev-ok"), .4, .5); stepState(3, "done"); });
+at(LN("an4").captions[2].start - .1, () => {
+  focus($("#fc"), 1.18, 1.0, { dy: 10 });
+  show($("#fs-im"), .45, .05); show($("#fs-qu"), .45, .75); show($("#fs-su"), .45, 1.45);
+});
+at(LN("an5").start - .2, () => { stepState(4, "act"); anim($("#cardscroll"), { y: -40 }, .9, E.inOut); focus($("#rpanel"), 1.3, 1.1, { dy: 95 }); });
+at(LN("an5").start + .3, () => { $$("#gchips .gc").slice(0, 3).forEach((n, i) => show(n, .35, .25 * i, 6)); sfx("pop", .4); });
+at(LN("an5").captions[1].start, () => show($$("#gchips .gc")[3], .4, 0, 6));
+at(LN("an5").captions[2].start, () => { show($$("#gchips .gc")[4], .4, 0, 6); });
+at(LN("an5").captions[3].start, () => { show($$("#gchips .gc")[5], .45, 0, 6); stepState(4, inc.grader.passed ? "done" : "fail"); caseDots("incident_01"); sfx("pop", .7); });
+at(sAn.end - .6, () => camHome(.9));
+
+// 3 · human gate
+at(sGate.start, () => {
+  chapter("03", "Human review · mandatory gate"); view("gate"); sfx("whoosh", .5);
+  $$("#sigs .sig").forEach((n, i) => show(n, .35, .45 + i * .12, 6));
+  set($("#sig-note"), { o: 0 }); set($("#g-adj"), { o: .55 });
+});
+at(LN("gate1").start + .2, () => { focus($("#g-gate"), 1.35, 1.1, { dy: -30 }); cursorShow(1, .3, .3); cursorTo($("#b-acc"), .8, { delay: .3 }); });
+at(LN("gate1").captions[1].start + .2, () => { cursorTo($("#b-rej"), 1.2); });
+at(LN("gate1").captions[1].start + 1.6, () => { cursorTo($("#b-edt"), .6); });
+at(LN("gate1").captions[1].start + 2.35, () => {
+  click($("#b-edt")); $("#b-edt").classList.add("sel");
+  show($("#ed-wrap"), .45, .1);
+  typeText($("#editor"), EDIT_TEXT, 3.6, .5);
+  focus($("#g-gate"), 1.3, 1.0, { dy: 0, delay: .2 });
+});
+at(LN("gate2").start + .1, () => { cursorShow(0, .3); show($("#sig-note"), .5); focus($("#g-sig"), 1.4, 1.1, { dx: 60 }); });
+at(LN("gate2").captions[1].start, () => { anim($("#g-adj"), { o: 1 }, .4); focus($("#g-adj"), 1.4, 1.1, { dx: 60 }); });
+at(sGate.end - 2.4, () => { camHome(.9); cursorShow(1, .3); cursorTo($("#b-save"), .9, { delay: .1 }); });
+at(sGate.end - 1.25, () => { click($("#b-save")); show($("#toast"), .4, .15, 10); });
+
+// 4 · dashboard
+at(sDash.start, () => {
+  chapter("04", "Dashboard · real run data"); view("dash"); cursorShow(0, .2); sfx("whoosh", .5);
+  $$(".kpi").forEach((k, i) => { show(k, .45, .1 + i * .08, 10); });
+  set($("#d-mx"), { o: 0 }); set($("#d-bars"), { o: 0 }); set($("#d-hist"), { o: 0 });
+});
+at(LN("dash1").start + .2, () => {
+  [0, 1].forEach(i => { const k = KP[i]; countTo($(`#kpi${i} .num`), k.v, 1.0, Math.round, .1); if (k.w) cssVar($(`#kpi${i}`), "--w", 0, k.w, 1.0, "%", E.out, .1); });
+  focus($("#kpis"), 1.25, 1.0, { dx: -150, dy: 30 });
+});
+at(LN("dash1").captions[1].start - .4, () => {
+  // terminal with the real suite output
+  show($("#term"), .45, 0, 14); sfx("pop", .4);
+  const tls = $$("#term .tl"), pre = $("#term-pre");
+  tls.forEach(n => n.style.display = "none");
+  tween(2.8, p => {
+    const n = Math.round(tls.length * p);
+    tls.forEach((l, i) => l.style.display = i < n ? "block" : "none");
+    pre.style.transform = `translateY(${-Math.max(0, n - 14) * 17.82}px)`;
+  }, E.lin, .3);
+  focus($("#term"), 1.3, 1.0, { dy: 20 });
+});
+at(LN("dash2").start - .15, () => {
+  hide($("#term"), .35);
+  [2, 3].forEach(i => { const k = KP[i]; countTo($(`#kpi${i} .num`), k.v, .9, Math.round, i === 2 ? .2 : 3.0); cssVar($(`#kpi${i}`), "--w", 0, k.w, .9, "%", E.out, i === 2 ? .2 : 3.0); });
+  focus($("#kpi2"), 1.55, 1.0, { dy: 15 });
+});
+at(LN("dash2").captions[1].start - .1, () => { focus($("#kpi3"), 1.55, .9, { dy: 15 }); });
+at(LN("dash3").start, () => {
+  [4, 5].forEach(i => { const k = KP[i]; countTo($(`#kpi${i} .num`), k.v, .9); cssVar($(`#kpi${i}`), "--w", 0, k.w, .9, "%", E.out); });
+  show($("#d-mx"), .5, 0); show($("#d-bars"), .5, .15); show($("#d-hist"), .5, .3);
+  $$("#d-mx .mrow").forEach((r, i) => show(r, .3, .2 + i * .08, 4));
+  $$("#d-bars .bt").forEach((b, i) => cssVar(b, "--w", 0, +b.dataset.w, .9, "%", E.out, .5 + i * .06));
+  focus($("#d-bars"), 1.45, 1.1, { dy: 0 });
+});
+at(LN("dash3").captions[2].start - .2, () => { focus($("#d-hist"), 1.55, 1.0); });
+at(sDash.end - .9, () => camHome(.8));
+
+// 5 · six cases
+const CASE_LINES = ["c1", "c2", "c3", "c4", "c5", "c6"];
+const det = $("#cdetail");
+at(sCases.start, () => {
+  chapter("05", "Six cases · real run"); view("cases"); sfx("whoosh", .5);
+  $$(".ccard").forEach((c, i) => show(c, .45, .15 + i * .09, 14));
+  D.cases.forEach(c => caseDots(c.id));
+});
+D.cases.forEach((c, i) => {
+  const line = LN(CASE_LINES[i]);
+  const t0 = i === 0 ? line.captions[1].start - .35 : line.start - .3;
+  at(t0, () => {
+    selCase(c.id);
+    $$(".ccard").forEach(n => { n.classList.toggle("focus", n.id === "cc-" + c.id); anim(n, { o: n.id === "cc-" + c.id ? 1 : .55 }, .4); });
+    if (i === 0) { det.innerHTML = detailHTML(c); show(det, .5, 0, 12); focus(det, 1.28, 1.1); }
+    else {
+      anim(det, { o: 0, y: -6 }, .2);
+      tween(.01, () => { det.innerHTML = detailHTML(c); }, E.lin, .21);
+      tween(.01, () => set(det, { y: 8 }), E.lin, .22);
+      anim(det, { o: 1, y: 0 }, .4, E.out, .23);
+      focus(det, 1.28, 1.1, { dy: i % 2 ? 14 : -14 });
+    }
+    sfx("pop", .35);
+  });
+});
+at(sCases.end - .9, () => { camHome(.8); $$(".ccard").forEach(n => { n.classList.remove("focus"); anim(n, { o: 1 }, .4); }); });
+
+// 6 · hypothesis and limits
+at(sClose.start, () => {
+  chapter("06", "Hypothesis and limits"); sfx("whoosh", .6);
+  anim(win, { o: .16, s: .94, b: 6, y: 10 }, 1.0, E.inOut);
+  set($("#ov-close"), { o: 1 });
+  ["#h-k", "#h-t", "#h-d", "#next"].forEach(s => set($(s), { o: 0 }));
+  $$("#lim div").forEach(n => set(n, { o: 0 }));
+  show($("#h-k"), .5, .4, 8);
+  set($("#h-t"), { o: 0, y: 16, b: 6 }); anim($("#h-t"), { o: 1, y: 0, b: 0 }, .9, E.out, .6);
+  show($("#h-d"), .6, 1.4, 8);
+});
+at(LN("close2").start, () => { $$("#lim div").forEach((n, i) => show(n, .5, i * .55, 14)); });
+at(LN("close2").captions[2].start - .1, () => show($("#next"), .55, 0, 10));
+at(LN("close3").start - .2, () => {
+  anim($("#ov-close"), { o: 0, b: 5 }, .6); anim(win, { o: 0 }, .6); hide($("#chapter"), .4);
+  set($("#ov-end"), { o: 0, s: 1.04 }); anim($("#ov-end"), { o: 1, s: 1 }, 1.0, E.out, .3); sfx("boom", .6);
+});
+at(TL.total - .9, () => anim($("#fade"), { o: 1 }, .85, E.inOut));
+
+CUES.sort((a, b) => a.t - b.t);
+
+/* ---------- captions and ambience ---------- */
+const capEl = $("#cap");
+let capTxt = null;
+function captions(t) {
+  const L = TL.lines.find(l => t >= l.start - .1 && t < l.end + .18);
+  if (!L) { capEl.style.opacity = 0; return; }
+  let c = L.captions.find(c => t < c.end) || L.captions[L.captions.length - 1];
+  if (c.text !== capTxt) { capTxt = c.text; capEl.textContent = c.text; }
+  const a = clamp((t - (L.start - .1)) / .14), b = clamp((L.end + .18 - t) / .14);
+  capEl.style.opacity = Math.min(a, b).toFixed(3);
+}
+const bg = $("#bg");
+function ambient(t) {
+  bg.style.setProperty("--g1x", (20 + 8 * Math.sin(t / 9)).toFixed(2) + "%");
+  bg.style.setProperty("--g1y", (12 + 6 * Math.cos(t / 11)).toFixed(2) + "%");
+  bg.style.setProperty("--g2x", (82 - 7 * Math.sin(t / 13)).toFixed(2) + "%");
+  bg.style.setProperty("--g2y", (88 - 6 * Math.cos(t / 10)).toFixed(2) + "%");
+}
+
+let ci = 0;
+window.__renderAt = (t) => {
+  while (ci < CUES.length && CUES[ci].t <= t) { const c = CUES[ci++]; step(c.t); NOW = c.t; c.fn(); }
+  step(t); NOW = t; ambient(t); captions(t);
+};
+window.__total = TL.total;
+window.__ready = true;
+})();
+</script>
+</body>
+</html>

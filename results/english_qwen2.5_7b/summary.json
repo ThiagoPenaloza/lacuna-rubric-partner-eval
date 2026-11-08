@@ -1,0 +1,78 @@
+{
+  "run": "results/english_qwen2.5_7b",
+  "task_count": 6,
+  "format_pass_rate": 1.0,
+  "content_proxy_pass_rate": 0.3333333333333333,
+  "tasks": [
+    {
+      "task_id": "ambiguity_03",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": false,
+      "matched_ids": [
+        "resolution_deadline"
+      ],
+      "missing_ids": [],
+      "literal_evidence_coverage": 1.0
+    },
+    {
+      "task_id": "code_05",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": false,
+      "matched_ids": [
+        "invalid_input_continuity",
+        "valid_iso"
+      ],
+      "missing_ids": [],
+      "literal_evidence_coverage": 1.0
+    },
+    {
+      "task_id": "context_02",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": false,
+      "matched_ids": [],
+      "missing_ids": [
+        "client_needs"
+      ],
+      "literal_evidence_coverage": 1.0
+    },
+    {
+      "task_id": "feedback_04",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": false,
+      "matched_ids": [],
+      "missing_ids": [
+        "unactionable_feedback"
+      ],
+      "literal_evidence_coverage": 1.0
+    },
+    {
+      "task_id": "incident_01",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": true,
+      "matched_ids": [
+        "recovery",
+        "start_time",
+        "user_impact"
+      ],
+      "missing_ids": [],
+      "literal_evidence_coverage": 1.0
+    },
+    {
+      "task_id": "iteration_06",
+      "parseable": true,
+      "format_passed": true,
+      "content_proxy_passed": true,
+      "matched_ids": [
+        "remaining_deadline"
+      ],
+      "missing_ids": [],
+      "literal_evidence_coverage": 1.0
+    }
+  ],
+  "warning": "content_proxy_passed is not human semantic adjudication."
+}

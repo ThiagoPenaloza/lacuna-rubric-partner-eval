@@ -1,0 +1,8 @@
+.maestri/
+.DS_Store
+__pycache__/
+*.pyc
+results/superseded_portuguese/
+submission/superseded_portuguese/
+.claude/
+node_modules/

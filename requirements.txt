@@ -1,0 +1,2 @@
+# The eval itself uses only Python's standard library.
+# The optional video builder installs its temporary Node/ffmpeg tools locally.

@@ -1,0 +1,27 @@
+{
+  "task_id": "ambiguity_03",
+  "prompt_input": {
+    "task_id": "ambiguity_03",
+    "goal": "score a support response",
+    "context": "resolution must happen within 2 business days",
+    "rubric_draft": "C1: Resolves the problem quickly."
+  },
+  "raw_response": "{\n  \"status\": \"review_ready\",\n  \"findings\": [\n    {\n      \"kind\": \"ambiguity\",\n      \"criterion_ref\": \"C1\",\n      \"evidence\": \"resolution must happen within 2 business days\",\n      \"impact\": \"The rubric does not specify the timeframe for resolving the problem, which could lead to inconsistent scoring.\",\n      \"question\": \"Is 'quickly' defined in relation to the 2 business day resolution timeframe?\",\n      \"suggestion\": \"Clarify the timeframe for 'quickly' in relation to the 2 business day resolution timeframe.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"human_decision_required\": true\n}",
+  "api_done": true,
+  "eval_count": 145,
+  "parsed_response": {
+    "status": "review_ready",
+    "findings": [
+      {
+        "kind": "ambiguity",
+        "criterion_ref": "C1",
+        "evidence": "resolution must happen within 2 business days",
+        "impact": "The rubric does not specify the timeframe for resolving the problem, which could lead to inconsistent scoring.",
+        "question": "Is 'quickly' defined in relation to the 2 business day resolution timeframe?",
+        "suggestion": "Clarify the timeframe for 'quickly' in relation to the 2 business day resolution timeframe.",
+        "confidence": "high"
+      }
+    ],
+    "human_decision_required": true
+  }
+}

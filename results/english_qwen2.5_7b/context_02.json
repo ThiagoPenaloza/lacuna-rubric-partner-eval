@@ -1,0 +1,27 @@
+{
+  "task_id": "context_02",
+  "prompt_input": {
+    "task_id": "context_02",
+    "goal": "evaluate whether a summary meets the customer's needs",
+    "context": "no customer profile, need, or operational rule is provided",
+    "rubric_draft": "C1: The summary is useful to the customer."
+  },
+  "raw_response": "{\n  \"status\": \"review_ready\",\n  \"findings\": [\n    {\n      \"kind\": \"omission\",\n      \"criterion_ref\": \"C1\",\n      \"evidence\": \"no customer profile, need, or operational rule is provided\",\n      \"impact\": \"The rubric lacks context to determine what 'useful' means in this scenario.\",\n      \"question\": \"What criteria define a 'useful' summary for the customer?\",\n      \"suggestion\": \"Define what 'useful' means in the context of the customer's needs and operational rules.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"human_decision_required\": true\n}",
+  "api_done": true,
+  "eval_count": 139,
+  "parsed_response": {
+    "status": "review_ready",
+    "findings": [
+      {
+        "kind": "omission",
+        "criterion_ref": "C1",
+        "evidence": "no customer profile, need, or operational rule is provided",
+        "impact": "The rubric lacks context to determine what 'useful' means in this scenario.",
+        "question": "What criteria define a 'useful' summary for the customer?",
+        "suggestion": "Define what 'useful' means in the context of the customer's needs and operational rules.",
+        "confidence": "high"
+      }
+    ],
+    "human_decision_required": true
+  }
+}

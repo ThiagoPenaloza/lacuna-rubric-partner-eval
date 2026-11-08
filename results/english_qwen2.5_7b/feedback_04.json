@@ -1,0 +1,30 @@
+{
+  "task_id": "feedback_04",
+  "prompt_input": {
+    "task_id": "feedback_04",
+    "goal": "evaluate a rubric that measures whether a summary contains a decision and an owner",
+    "context": "the summary must contain an explicit decision and an identified responsible person",
+    "rubric_draft": "C1: Explicit decision. C2: Responsible person identified.",
+    "history": {
+      "partner_feedback": "The rubric is vague; be more specific."
+    }
+  },
+  "raw_response": "{\n  \"status\": \"review_ready\",\n  \"findings\": [\n    {\n      \"kind\": \"ambiguity\",\n      \"criterion_ref\": \"C1: Explicit decision. C2: Responsible person identified.\",\n      \"evidence\": \"C1: Explicit decision. C2: Responsible person identified.\",\n      \"impact\": \"The criteria are ambiguous and may not cover all necessary aspects of the goal.\",\n      \"question\": \"What constitutes an 'explicit decision' and how should it be identified in the summary?\",\n      \"suggestion\": \"Define what an 'explicit decision' entails, such as specific phrases or structures that indicate a decision has been made.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"human_decision_required\": true\n}",
+  "api_done": true,
+  "eval_count": 157,
+  "parsed_response": {
+    "status": "review_ready",
+    "findings": [
+      {
+        "kind": "ambiguity",
+        "criterion_ref": "C1: Explicit decision. C2: Responsible person identified.",
+        "evidence": "C1: Explicit decision. C2: Responsible person identified.",
+        "impact": "The criteria are ambiguous and may not cover all necessary aspects of the goal.",
+        "question": "What constitutes an 'explicit decision' and how should it be identified in the summary?",
+        "suggestion": "Define what an 'explicit decision' entails, such as specific phrases or structures that indicate a decision has been made.",
+        "confidence": "high"
+      }
+    ],
+    "human_decision_required": true
+  }
+}

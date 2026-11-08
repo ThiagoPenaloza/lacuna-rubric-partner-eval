@@ -1,0 +1,46 @@
+{
+  "note": "Second local execution of eval/run_ollama.py with the same English inputs, written to a temporary folder and compared byte for byte with the recorded raw_response values. The rerun files were not kept in the repository.",
+  "rerun_started_at": "2026-11-08T03:09:54Z",
+  "model": "qwen2.5:7b",
+  "system_prompt_sha256": "a3281be7ba4451641e93054b2fe0f7fab8f228e727f9e432b4773cee99dab8a0",
+  "identical": 6,
+  "total": 6,
+  "tasks": [
+    {
+      "task_id": "incident_01",
+      "identical": true,
+      "eval_count_recorded": 162,
+      "eval_count_rerun": 162
+    },
+    {
+      "task_id": "context_02",
+      "identical": true,
+      "eval_count_recorded": 139,
+      "eval_count_rerun": 139
+    },
+    {
+      "task_id": "ambiguity_03",
+      "identical": true,
+      "eval_count_recorded": 145,
+      "eval_count_rerun": 145
+    },
+    {
+      "task_id": "feedback_04",
+      "identical": true,
+      "eval_count_recorded": 157,
+      "eval_count_rerun": 157
+    },
+    {
+      "task_id": "code_05",
+      "identical": true,
+      "eval_count_recorded": 178,
+      "eval_count_rerun": 178
+    },
+    {
+      "task_id": "iteration_06",
+      "identical": true,
+      "eval_count_recorded": 129,
+      "eval_count_rerun": 129
+    }
+  ]
+}

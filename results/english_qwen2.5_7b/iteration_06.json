@@ -1,0 +1,32 @@
+{
+  "task_id": "iteration_06",
+  "prompt_input": {
+    "task_id": "iteration_06",
+    "goal": "rubric for a support response",
+    "context": "explain the next action and a deadline of up to 2 business days",
+    "rubric_draft": "C1: States the next action.",
+    "history": {
+      "initial_draft": "C1: Useful response.",
+      "partner_feedback": "Split the next action and the deadline into separate criteria.",
+      "author_decision": "The author accepted the action and changed C1 to States the next action; the deadline still does not appear."
+    }
+  },
+  "raw_response": "{\n  \"status\": \"review_ready\",\n  \"findings\": [\n    {\n      \"kind\": \"omission\",\n      \"criterion_ref\": \"C1\",\n      \"evidence\": \"States the next action.\",\n      \"impact\": \"The rubric does not include a criterion for the deadline.\",\n      \"question\": \"Should the rubric include a criterion for the deadline?\",\n      \"suggestion\": \"Add a criterion for the deadline, such as C2: Includes a deadline of up to 2 business days.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"human_decision_required\": true\n}",
+  "api_done": true,
+  "eval_count": 129,
+  "parsed_response": {
+    "status": "review_ready",
+    "findings": [
+      {
+        "kind": "omission",
+        "criterion_ref": "C1",
+        "evidence": "States the next action.",
+        "impact": "The rubric does not include a criterion for the deadline.",
+        "question": "Should the rubric include a criterion for the deadline?",
+        "suggestion": "Add a criterion for the deadline, such as C2: Includes a deadline of up to 2 business days.",
+        "confidence": "high"
+      }
+    ],
+    "human_decision_required": true
+  }
+}

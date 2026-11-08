@@ -1,0 +1,27 @@
+{
+  "task_id": "incident_01",
+  "prompt_input": {
+    "task_id": "incident_01",
+    "goal": "evaluate an incident report",
+    "context": "must record the start time, the impact on users, and the recovery action",
+    "rubric_draft": "C1: The report describes the probable cause."
+  },
+  "raw_response": "{\n  \"status\": \"review_ready\",\n  \"findings\": [\n    {\n      \"kind\": \"omission\",\n      \"criterion_ref\": \"context\",\n      \"evidence\": \"must record the start time, the impact on users, and the recovery action\",\n      \"impact\": \"The rubric does not cover all required elements of the incident report.\",\n      \"question\": \"What criteria should be used to evaluate the recording of start time, impact on users, and recovery action?\",\n      \"suggestion\": \"Add criteria C2: The report records the start time, C3: The report documents the impact on users, and C4: The report details the recovery action.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"human_decision_required\": true\n}",
+  "api_done": true,
+  "eval_count": 162,
+  "parsed_response": {
+    "status": "review_ready",
+    "findings": [
+      {
+        "kind": "omission",
+        "criterion_ref": "context",
+        "evidence": "must record the start time, the impact on users, and the recovery action",
+        "impact": "The rubric does not cover all required elements of the incident report.",
+        "question": "What criteria should be used to evaluate the recording of start time, impact on users, and recovery action?",
+        "suggestion": "Add criteria C2: The report records the start time, C3: The report documents the impact on users, and C4: The report details the recovery action.",
+        "confidence": "high"
+      }
+    ],
+    "human_decision_required": true
+  }
+}

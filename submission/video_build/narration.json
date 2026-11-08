@@ -1,0 +1,159 @@
+{
+  "voice": "Samantha",
+  "rate": 178,
+  "gap": 0.32,
+  "note": "text = caption shown on screen; tts = optional pronunciation spelling used only by the local macOS voice (say). Every claim comes from data.json (results/english_qwen2.5_7b).",
+  "scenes": [
+    {
+      "id": "open",
+      "lead": 0.25,
+      "tail": 0.2,
+      "lines": [
+        {
+          "id": "open1",
+          "text": "Lacuna. Incomplete rubric, wrong grade.",
+          "tts": "Lacuna. Incomplete rubric... wrong grade.",
+          "rate": 182
+        },
+        {
+          "id": "open2",
+          "text": "We measure whether an LLM finds the gap, with evidence and human review.",
+          "tts": "We measure whether an L L M finds the gap, with evidence and human review.",
+          "rate": 188
+        }
+      ],
+      "gap": 0.15
+    },
+    {
+      "id": "input",
+      "lead": 0.9,
+      "tail": 0.9,
+      "lines": [
+        {
+          "id": "input1",
+          "text": "The rubric author provides a goal, the context, and a draft."
+        },
+        {
+          "id": "input2",
+          "text": "In this case, the incident report must record the start time, the impact on users, and the recovery action. The draft only asks for the probable cause."
+        }
+      ]
+    },
+    {
+      "id": "analysis",
+      "lead": 0.5,
+      "tail": 1.0,
+      "lines": [
+        {
+          "id": "an1",
+          "text": "When we analyze, only the input goes to the model; the answer key stays with the grader."
+        },
+        {
+          "id": "an2",
+          "text": "This is the real run recorded with qwen2.5:7b on local Ollama, temperature 0, seed 17. A local rerun returned the same six responses, byte for byte.",
+          "tts": "This is the real run recorded with Qwen two point five, seven B, on local Oh-llama, temperature zero, seed seventeen. A local rerun returned the same six responses, byte for byte."
+        },
+        {
+          "id": "an3",
+          "text": "The response follows the JSON contract: status, findings, and a required human decision.",
+          "tts": "The response follows the jay-son contract: status, findings, and a required human decision."
+        },
+        {
+          "id": "an4",
+          "text": "Each finding becomes a card. The evidence is highlighted in the input, and only counts if literal. Then come impact, question, and suggestion."
+        },
+        {
+          "id": "an5",
+          "text": "Here, the model found all three requirements in a single finding. The status is right, and the evidence is literal. Its suggestion splits them into three separate criteria. The content proxy passes this case."
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "lead": 0.5,
+      "tail": 1.2,
+      "lines": [
+        {
+          "id": "gate1",
+          "text": "And here is the gate: nothing is applied without human review. The author accepts, edits, or rejects each suggestion."
+        },
+        {
+          "id": "gate2",
+          "text": "Even a pass from the lexical proxy is a conservative signal, not a verdict. Semantic equivalence and partial credit need human adjudication."
+        }
+      ]
+    },
+    {
+      "id": "dash",
+      "lead": 0.5,
+      "tail": 1.0,
+      "lines": [
+        {
+          "id": "dash1",
+          "text": "The dashboard shows the full run: six tasks, one attempt per task, and 24 metagrader tests passing.",
+          "tts": "The dashboard shows the full run: six tasks, one attempt per task, and twenty-four meta-grader tests passing."
+        },
+        {
+          "id": "dash2",
+          "text": "Valid protocol on 6 of 6, 100%. Content proxy: 2 of 6, 33%.",
+          "tts": "Valid protocol on six of six: one hundred percent. Content proxy: two of six, thirty-three percent."
+        },
+        {
+          "id": "dash3",
+          "text": "Status was right in five of six, but the model never asked for context. Seven of nine answer-key requirements were found. And a second run gave six of six identical responses."
+        }
+      ]
+    },
+    {
+      "id": "cases",
+      "lead": 0.4,
+      "tail": 0.9,
+      "lines": [
+        {
+          "id": "c1",
+          "text": "The six cases, quickly. Omissions: all three requirements found, with the right status. The proxy passes."
+        },
+        {
+          "id": "c2",
+          "text": "Insufficient context: it asked what makes a summary useful, but marked the task ready for review instead of asking for context."
+        },
+        {
+          "id": "c3",
+          "text": "Ambiguity: it linked “quickly” to the two business day limit, but only suggested clarifying it, without writing the criterion."
+        },
+        {
+          "id": "c4",
+          "text": "Generic feedback: it ignored the vague feedback in the history and called C1 and C2 ambiguous instead.",
+          "tts": "Generic feedback: it ignored the vague feedback in the history, and called C 1 and C 2 ambiguous instead."
+        },
+        {
+          "id": "c5",
+          "text": "Code: success, explicit error, and continuity are all there. The proxy fails it on word order; the team reads it as a likely false negative."
+        },
+        {
+          "id": "c6",
+          "text": "Iteration: it found the remaining deadline and kept the accepted action. The proxy passes."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": 0.5,
+      "tail": 2.6,
+      "lines": [
+        {
+          "id": "close1",
+          "text": "In this exploratory run, the hypothesis shows up in part: the model finds explicit omissions, but struggles to ask for missing context, use the history, and make vague criteria verifiable."
+        },
+        {
+          "id": "close2",
+          "text": "Limits: six synthetic tasks, one local model, one attempt per task, and answer keys still pending human adjudication. Next step: frontier models, with three to five attempts per task."
+        },
+        {
+          "id": "close3",
+          "text": "Lacuna. A good grader starts with a good rubric."
+        }
+      ]
+    }
+  ]
+}
