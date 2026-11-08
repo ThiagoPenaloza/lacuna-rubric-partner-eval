@@ -1,5 +1,9 @@
 # Lacuna — Rubric Partner Eval
 
+## About the micro1 Eval Hackathon
+
+The micro1 Eval Hackathon asks participants to find a meaningful limitation of current frontier AI systems and turn it into a rigorous, reproducible evaluation. Lacuna is this project's submission: it tests a model in the role of a rubric-writing partner, where correctness depends on requirements, evidence, edge cases, and respect for human decisions—not just fluent prose.
+
 ## Short description
 
 Lacuna evaluates whether an LLM can act as a careful rubric-writing partner. Given a goal, context, draft rubric, and optional revision history, the model must identify missing requirements, distinguish missing context from an omission, resolve vague language into observable criteria, turn generic feedback into an actionable edit, cover both success and failure behavior in code tasks, and preserve decisions already accepted by the author.
