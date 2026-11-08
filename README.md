@@ -57,6 +57,8 @@ Model: `qwen2.5:7b` through Ollama 0.40.3; English inputs; temperature 0; seed 1
 
 These are exploratory local results, not a general model score. The English raw outputs and summary are in `results/english_qwen2.5_7b/`.
 
+No frontier model was run in this zero-cost pilot. The submission therefore does not claim frontier-model performance; it reports a reproducible local probe and identifies the failure types that should be tested against frontier models in a follow-up run.
+
 ## Failure analysis
 
 The model reliably produced the required JSON and found all incident and iterative-deadline IDs. It failed the context-insufficiency case by choosing the wrong status/kind, missed the generic feedback in revision history, and produced a likely lexical false negative on the code case even though the proposed behaviors were substantively correct in a different word order. This demonstrates why protocol checks, lexical proxies, and human semantic adjudication must be reported separately.
