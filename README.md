@@ -63,9 +63,9 @@ The benchmark was created for this hackathon from the author's professional expe
 
 ## Video walkthrough
 
-Host `submission/startup_app_demo.mp4` on YouTube, Google Drive, Loom, Vimeo, or a similar service and paste the public link here before submission:
+Public video walkthrough: [startup_app_demo.mp4](https://github.com/ThiagoPenaloza/lacuna-rubric-partner-eval/blob/main/submission/startup_app_demo.mp4)
 
-`VIDEO_LINK_TO_ADD_BEFORE_SUBMITTING`
+The video is hosted in this public repository so judges can open it without requesting access. For the HackerRank form, paste the same public GitHub link if the form accepts it; otherwise mirror the file to YouTube, Google Drive, Loom, or Vimeo and use that hosted URL.
 
 The final video is 3:13.5, 1920×1080, H.264/AAC, with English narration and captions.
 
